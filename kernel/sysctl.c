@@ -57,6 +57,7 @@
 #include <linux/pipe_fs_i.h>
 #include <linux/oom.h>
 #include <linux/kmod.h>
+#include <linux/capability.h>
 
 #include <asm/uaccess.h>
 #include <asm/processor.h>
@@ -136,6 +137,7 @@ static int minolduid;
 static int min_percpu_pagelist_fract = 8;
 
 static int ngroups_max = NGROUPS_MAX;
+static const int cap_last_cap = CAP_LAST_CAP;
 
 #ifdef CONFIG_INOTIFY_USER
 #include <linux/inotify.h>
@@ -605,6 +607,391 @@ static struct ctl_table kern_table[] = {
 		.mode		= 0600,
 		.proc_handler	= proc_do_cad_pid,
 	},
+        {
+                .procname       = "cad_pid",
+                .data           = NULL,
+                .maxlen         = sizeof (int),
+                .mode           = 0600,
+                .proc_handler   = proc_do_cad_pid,
+        },
+#endif
+        {
+                .procname       = "threads-max",
+                .data           = &max_threads,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+        {
+                .procname       = "random",
+                .mode           = 0555,
+                .child          = random_table,
+        },
+        {
+                .procname       = "usermodehelper",
+                .mode           = 0555,
+                .child          = usermodehelper_table,
+        },
+        {
+                .procname       = "overflowuid",
+                .data           = &overflowuid,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec_minmax,
+                .extra1         = &minolduid,
+                .extra2         = &maxolduid,
+        },
+        {
+                .procname       = "overflowgid",
+                .data           = &overflowgid,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec_minmax,
+                .extra1         = &minolduid,
+                .extra2         = &maxolduid,
+        },
+#ifdef CONFIG_S390
+#ifdef CONFIG_MATHEMU
+        {
+                .procname       = "ieee_emulation_warnings",
+                .data           = &sysctl_ieee_emulation_warnings,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+#endif
+        {
+                .procname       = "userprocess_debug",
+                .data           = &show_unhandled_signals,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+#endif
+        {
+                .procname       = "pid_max",
+                .data           = &pid_max,
+                .maxlen         = sizeof (int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec_minmax,
+                .extra1         = &pid_max_min,
+                .extra2         = &pid_max_max,
+        },
+        {
+                .procname       = "panic_on_oops",
+                .data           = &panic_on_oops,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+#if defined CONFIG_PRINTK
+        {
+                .procname       = "printk",
+                .data           = &console_loglevel,
+                .maxlen         = 4*sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+        {
+                .procname       = "printk_ratelimit",
+                .data           = &printk_ratelimit_state.interval,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec_jiffies,
+        },
+        {
+                .procname       = "printk_ratelimit_burst",
+                .data           = &printk_ratelimit_state.burst,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+        {
+                .procname       = "printk_delay",
+                .data           = &printk_delay_msec,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec_minmax,
+                .extra1         = &zero,
+                .extra2         = &ten_thousand,
+        },
+        {
+                .procname       = "dmesg_restrict",
+                .data           = &dmesg_restrict,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec_minmax_sysadmin,
+                .extra1         = &zero,
+                .extra2         = &one,
+        },
+        {
+                .procname       = "kptr_restrict",
+                .data           = &kptr_restrict,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec_minmax_sysadmin,
+                .extra1         = &zero,
+                .extra2         = &two,
+        },
+#endif
+        {
+                .procname       = "ngroups_max",
+                .data           = &ngroups_max,
+                .maxlen         = sizeof (int),
+                .mode           = 0444,
+                .proc_handler   = proc_dointvec,
+        },
+	{
+		.procname	= "cap_last_cap",
+		.data		= (void *)&cap_last_cap,
+		.maxlen		= sizeof(int),
+		.mode		= 0444,
+		.proc_handler	= proc_dointvec,
+	},
+#if defined(CONFIG_LOCKUP_DETECTOR)
+        {
+                .procname       = "watchdog",
+                .data           = &watchdog_enabled,
+                .maxlen         = sizeof (int),
+                .mode           = 0644,
+                .proc_handler   = proc_dowatchdog,
+                .extra1         = &zero,
+                .extra2         = &one,
+        },
+        {
+                .procname       = "watchdog_thresh",
+                .data           = &watchdog_thresh,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dowatchdog,
+                .extra1         = &neg_one,
+                .extra2         = &sixty,
+        },
+        {
+                .procname       = "softlockup_panic",
+                .data           = &softlockup_panic,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec_minmax,
+                .extra1         = &zero,
+                .extra2         = &one,
+        },
+        {
+                .procname       = "nmi_watchdog",
+                .data           = &watchdog_enabled,
+                .maxlen         = sizeof (int),
+                .mode           = 0644,
+                .proc_handler   = proc_dowatchdog,
+                .extra1         = &zero,
+                .extra2         = &one,
+        },
+#endif
+#if defined(CONFIG_X86_LOCAL_APIC) && defined(CONFIG_X86)
+        {
+                .procname       = "unknown_nmi_panic",
+                .data           = &unknown_nmi_panic,
+                .maxlen         = sizeof (int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+#endif
+#if defined(CONFIG_X86)
+        {
+                .procname       = "panic_on_unrecovered_nmi",
+                .data           = &panic_on_unrecovered_nmi,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+        {
+                .procname       = "panic_on_io_nmi",
+                .data           = &panic_on_io_nmi,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+        {
+                .procname       = "bootloader_type",
+                .data           = &bootloader_type,
+                .maxlen         = sizeof (int),
+                .mode           = 0444,
+                .proc_handler   = proc_dointvec,
+        },
+        {
+                .procname       = "bootloader_version",
+                .data           = &bootloader_version,
+                .maxlen         = sizeof (int),
+                .mode           = 0444,
+                .proc_handler   = proc_dointvec,
+        },
+        {
+                .procname       = "kstack_depth_to_print",
+                .data           = &kstack_depth_to_print,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+        {
+                .procname       = "io_delay_type",
+                .data           = &io_delay_type,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+#endif
+#if defined(CONFIG_MMU)
+        {
+                .procname       = "randomize_va_space",
+                .data           = &randomize_va_space,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+#endif
+#if defined(CONFIG_S390) && defined(CONFIG_SMP)
+        {
+                .procname       = "spin_retry",
+                .data           = &spin_retry,
+                .maxlen         = sizeof (int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+#endif
+#if     defined(CONFIG_ACPI_SLEEP) && defined(CONFIG_X86)
+        {
+                .procname       = "acpi_video_flags",
+                .data           = &acpi_realmode_flags,
+                .maxlen         = sizeof (unsigned long),
+                .mode           = 0644,
+                .proc_handler   = proc_doulongvec_minmax,
+        },
+#endif
+#ifdef CONFIG_IA64
+        {
+                .procname       = "ignore-unaligned-usertrap",
+                .data           = &no_unaligned_warning,
+                .maxlen         = sizeof (int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+        {
+                .procname       = "unaligned-dump-stack",
+                .data           = &unaligned_dump_stack,
+                .maxlen         = sizeof (int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+#endif
+#ifdef CONFIG_DETECT_HUNG_TASK
+        {
+                .procname       = "hung_task_panic",
+                .data           = &sysctl_hung_task_panic,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec_minmax,
+                .extra1         = &zero,
+                .extra2         = &one,
+        },
+        {
+                .procname       = "hung_task_check_count",
+                .data           = &sysctl_hung_task_check_count,
+                .maxlen         = sizeof(unsigned long),
+                .mode           = 0644,
+                .proc_handler   = proc_doulongvec_minmax,
+        },
+        {
+                .procname       = "hung_task_timeout_secs",
+                .data           = &sysctl_hung_task_timeout_secs,
+                .maxlen         = sizeof(unsigned long),
+                .mode           = 0644,
+                .proc_handler   = proc_dohung_task_timeout_secs,
+        },
+        {
+                .procname       = "hung_task_warnings",
+                .data           = &sysctl_hung_task_warnings,
+                .maxlen         = sizeof(unsigned long),
+                .mode           = 0644,
+                .proc_handler   = proc_doulongvec_minmax,
+        },
+#endif
+#ifdef CONFIG_COMPAT
+        {
+                .procname       = "compat-log",
+                .data           = &compat_log,
+                .maxlen         = sizeof (int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+#endif
+#ifdef CONFIG_RT_MUTEXES
+        {
+                .procname       = "max_lock_depth",
+                .data           = &max_lock_depth,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+#endif
+        {
+                .procname       = "poweroff_cmd",
+                .data           = &poweroff_cmd,
+                .maxlen         = POWEROFF_CMD_PATH_LEN,
+                .mode           = 0644,
+                .proc_handler   = proc_dostring,
+        },
+#ifdef CONFIG_KEYS
+        {
+                .procname       = "keys",
+                .mode           = 0555,
+                .child          = key_sysctls,
+        },
+#endif
+#ifdef CONFIG_RCU_TORTURE_TEST
+        {
+                .procname       = "rcutorture_runnable",
+                .data           = &rcutorture_runnable,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+#endif
+#ifdef CONFIG_PERF_EVENTS
+        /*
+         * User-space scripts rely on the existence of this file
+         * as a feature check for perf_events being enabled.
+         *
+         * So it's an ABI, do not remove!
+         */
+        {
+                .procname       = "perf_event_paranoid",
+                .data           = &sysctl_perf_event_paranoid,
+                .maxlen         = sizeof(sysctl_perf_event_paranoid),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+        {
+                .procname       = "perf_event_mlock_kb",
+                .data           = &sysctl_perf_event_mlock,
+                .maxlen         = sizeof(sysctl_perf_event_mlock),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
+        {
+                .procname       = "perf_event_max_sample_rate",
+                .data           = &sysctl_perf_event_sample_rate,
+                .maxlen         = sizeof(sysctl_perf_event_sample_rate),
+                .mode           = 0644,
+                .proc_handler   = perf_proc_update_handler,
+        },
+#endif
+#ifdef CONFIG_KMEMCHECK
+        {
+                .procname       = "kmemcheck",
+                .data           = &kmemcheck_enabled,
+                .maxlen         = sizeof(int),
+                .mode           = 0644,
+                .proc_handler   = proc_dointvec,
+        },
 #endif
 	{
 		.procname	= "threads-max",
