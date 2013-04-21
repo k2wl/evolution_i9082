@@ -3,8 +3,8 @@ export KERNELDIR=`readlink -f .`
 export PARENT_DIR=`readlink -f ..`
 export RAMFS_SOURCE=`readlink -f $KERNELDIR/k2wl/ramdisk`
 export USE_SEC_FIPS_MODE=true
-export KBUILD_BUILD_VERSION="0.2"
-export BUILD_VERSION="K2wl-SGGRAND-v0.2"
+export KBUILD_BUILD_VERSION="0.5"
+export BUILD_VERSION="K2wl-SGGRAND-v0.5"
 
 if [ "${1}" != "" ];then
   export KERNELDIR=`readlink -f ${1}`
