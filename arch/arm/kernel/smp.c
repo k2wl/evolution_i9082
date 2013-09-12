@@ -285,6 +285,8 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	struct mm_struct *mm = &init_mm;
 	unsigned int cpu;
 
+	cpu_init();
+
 	/*
 	 * The identity mapping is uncached (strongly ordered), so
 	 * switch away from it before attempting any exclusive accesses.
@@ -304,7 +306,6 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 
 	printk("CPU%u: Booted secondary processor\n", cpu);
 
-	cpu_init();
 	preempt_disable();
 	trace_hardirqs_off();
 
@@ -357,6 +358,7 @@ void __init smp_cpus_done(unsigned int max_cpus)
 
 void __init smp_prepare_boot_cpu(void)
 {
+	set_my_cpu_offset(per_cpu_offset(smp_processor_id()));
 	unsigned int cpu = smp_processor_id();
 
 	per_cpu(cpu_data, cpu).idle = current;
