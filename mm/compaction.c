@@ -768,6 +768,12 @@ unsigned long try_to_compact_pages(struct zonelist *zonelist,
 		alloc_flags |= ALLOC_CMA;
 #endif
 
+#if defined(CONFIG_MACH_Q1_BD) || defined(CONFIG_GC1_00_BD)
+	/* Temporary log to get information whether the compaction works well */
+	printk(KERN_NOTICE "%s, order=%d, sync=%d\n", __func__, order, sync);
+#endif
+	count_vm_event(COMPACTSTALL);
+
 	/* Compact each zone in the list */
 	for_each_zone_zonelist_nodemask(zone, z, zonelist, high_zoneidx,
 								nodemask) {
@@ -777,12 +783,11 @@ unsigned long try_to_compact_pages(struct zonelist *zonelist,
 		rc = max(status, rc);
 
 		/* If a normal allocation would succeed, stop compacting */
-		if (zone_watermark_ok(zone, order, low_wmark_pages(zone),
-					0, alloc_flags))
+		if (zone_watermark_ok(zone, order, low_wmark_pages(zone), 0, 0))
 			break;
 	}
 
-	return rc;
+return rc;
 }
 
 
