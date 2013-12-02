@@ -1,0 +1,3 @@
+Added overclocking 
+added undervolting
+few other tweaks.
