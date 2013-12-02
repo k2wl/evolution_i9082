@@ -30,7 +30,7 @@ nice -n 10 make -j4 || exit 1
 rm -rf $RAMFS_TMP
 rm -rf $RAMFS_TMP.cpio
 rm -rf $RAMFS_TMP.cpio.gz
-find -name '*.ko' -exec rm {} $KERNELDIR/k2wl/zip/customize/expmodules/ \;
+#find -name '*.ko' -exec rm {} $KERNELDIR/k2wl/zip/customize/expmodules/ \;
 #copy ramfs files to tmp directory
 cp -ax $RAMFS_SOURCE $RAMFS_TMP
 
@@ -68,5 +68,7 @@ stat $KERNELDIR/k2wl/Sboot.img
 cp $KERNELDIR/k2wl/Sboot.img /$KERNELDIR/k2wl/zip/
 cd $KERNELDIR/k2wl/zip
 zip -r $BUILD_VERSION.zip *
+#rm $KERNELDIR/zImage
+rm $KERNELDIR/k2wl/zImage
 rm $KERNELDIR/k2wl/Sboot.img
 rm $KERNELDIR/k2wl/zip/Sboot.img
