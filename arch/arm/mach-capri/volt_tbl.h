@@ -90,7 +90,6 @@
 
 #define CSR_REG_VAL_RETN_TT		0x4
 #define CSR_REG_VAL_ECO_TT		0x7
-
 #define CSR_REG_VAL_NRML_TT		0xC
 #define CSR_REG_VAL_TURBO_TT		0x11
 

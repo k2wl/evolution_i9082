@@ -61,7 +61,7 @@ cd $KERNELDIR/k2wl/
 #gzip -9 $RAMFS_TMP.cpio
 #cd -
 
-mkbootimg --base 0 --pagesize 4096 --kernel_offset 0xa2008000 --ramdisk_offset 0xa3000000 --second_offset 0xa2f00000 --tags_offset 0xa2000100 --cmdline 'console=ttyS0,115200n8 mem=832M@0xA2000000 androidboot.console=ttyS0 vc-cma-mem=0/176M@0xCB000000' --kernel zImage --ramdisk ramdisk.cpio.gz -o Sboot.img
+mkbootimg --base 0 --pagesize 4096 --kernel_offset 0xa2008000 --ramdisk_offset 0xa3000000 --second_offset 0xa2f00000 --tags_offset 0xa2000100 --cmdline 'console=ttyS0,115200n8 mem=832M@0xA2000000 androidboot.console=ttyS0 vc-cma-mem=0/176M@0xCB000000' --kernel zImage --ramdisk ramdisk.cpio.gz -o boot.img
 
 # copy all needed to k2wl kernel folder.
 stat $KERNELDIR/k2wl/Sboot.img
