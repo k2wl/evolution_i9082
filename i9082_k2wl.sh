@@ -11,8 +11,8 @@ normal='tput sgr0'
 bold='setterm -bold'
 date="date"
 #KERNEL_BUILD="k2wl_Kernel_Jelleybean-`date '+%Y-%m-%d-%H-%M'`" 	
-KBUILD_BUILD_VERSION="0.9"
-KERNEL_BUILD="K2wl-SGGRAND-v0.9-`date '+%Y-%m-%d--%H-%M'`"
+KBUILD_BUILD_VERSION="0.9.1"
+KERNEL_BUILD="K2wl-SGGRAND-v0.9.1-`date '+%Y-%m-%d--%H-%M'`"
 KBUILD_BUILD_USER= "k2wl"
 KBUILD_BUILD_HOST= "k2wlSuperMachine"
 $yellow
