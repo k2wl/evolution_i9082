@@ -11,8 +11,8 @@ normal='tput sgr0'
 bold='setterm -bold'
 date="date"
 #KERNEL_BUILD="k2wl_Kernel_Jelleybean-`date '+%Y-%m-%d-%H-%M'`" 	
-KBUILD_BUILD_VERSION="0.9.1"
-KERNEL_BUILD="K2wl-SGGRAND-v0.9.1-`date '+%Y-%m-%d--%H-%M'`"
+KBUILD_BUILD_VERSION="0.1"
+KERNEL_BUILD="K2wl-SGGRAND-v0.1-`date '+%Y-%m-%d--%H-%M'`"
 KBUILD_BUILD_USER= "k2wl"
 KBUILD_BUILD_HOST= "k2wlSuperMachine"
 $yellow
@@ -41,7 +41,7 @@ echo " |========================================================================
 $yellow
 $bold
 echo " |========================================================================| "
-echo " |======================== COMPILING evolution KERNEL ====================| "
+echo " |======================== COMPILING evolution cm11 KERNEL ===============| "
 echo " |========================================================================| "
 $normal
 
@@ -74,7 +74,7 @@ clear
 $cyan
 echo " Making config"
 $violet
-make i9082_defconfig
+make cm_i9082_defconfig
 clear
 
 
