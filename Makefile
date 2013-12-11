@@ -194,6 +194,8 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?= arm
 CROSS_COMPILE	?= /home/android/arm/arm-eabi-4.7/bin/arm-eabi-
+KBUILD_BUILD_USER= "k2wl"
+KBUILD_BUILD_HOST= "k2wlSuperMachine"
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)

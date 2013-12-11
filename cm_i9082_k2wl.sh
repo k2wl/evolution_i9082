@@ -12,9 +12,10 @@ bold='setterm -bold'
 date="date"
 #KERNEL_BUILD="k2wl_Kernel_Jelleybean-`date '+%Y-%m-%d-%H-%M'`" 	
 KBUILD_BUILD_VERSION="0.1"
-KERNEL_BUILD="K2wl-SGGRAND-v0.1-`date '+%Y-%m-%d--%H-%M'`"
-KBUILD_BUILD_USER= "k2wl"
-KBUILD_BUILD_HOST= "k2wlSuperMachine"
+KERNEL_BUILD="K2wl-SGGRAND-cm-v0.1-`date '+%Y-%m-%d--%H-%M'`"
+#KBUILD_BUILD_USER= "k2wl"
+#KBUILD_BUILD_HOST= "k2wlSuperMachine"
+TOOLCHAIN =/home/android/arm/arm-eabi-4.7/bin/arm-eabi-
 $yellow
 MODULES=./k2wl/system/lib/modules
 $blue
