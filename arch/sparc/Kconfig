@@ -590,6 +590,12 @@ config SYSVIPC_COMPAT
 	depends on COMPAT && SYSVIPC
 	default y
 
+<<<<<<< HEAD
+=======
+config KEYS_COMPAT
+	def_bool y if COMPAT && KEYS
+
+>>>>>>> ce25734... 3.0.33
 endmenu
 
 source "net/Kconfig"
