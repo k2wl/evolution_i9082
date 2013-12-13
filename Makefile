@@ -193,7 +193,8 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?= arm
-CROSS_COMPILE	?= /home/android/linaro4.7/bin/arm-unknown-linux-gnueabi-
+#CROSS_COMPILE	?= /home/android/linaro4.7/bin/arm-unknown-linux-gnueabi-
+CROSS_COMPILE	?= /home/android/sm4.7/bin/arm-eabi-
 #CROSS_COMPILE   ?= /home/android/linaro4.8/bin/arm-unknown-linux-gnueabi-
 #CROSS_COMPILE	?= /home/android/SM4.8/bin/arm-eabi-
 # Architecture as present in compile.h
@@ -370,6 +371,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks
+                   -Wno-maybe-uninitialized \
+                   -Wno-sizeof-pointer-memaccess \
                    -mtune=cortex-a9 -march=armv7-a -mcpu=cortex-a9 -mfpu=neon -marm 
                    -munaligned-access -fno-inline-functions \
                    -ffast-math \
@@ -571,9 +574,10 @@ endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
-ifneq ($(CONFIG_FRAME_WARN),0)
-KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
-endif
+#ifneq ($(CONFIG_FRAME_WARN),0)
+#KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
+#endif
+KBUILD_CFLAGS += $(call cc-disable-warning, array-bounds)
 
 # Force gcc to behave correct even for buggy distributions
 ifndef CONFIG_CC_STACKPROTECTOR
