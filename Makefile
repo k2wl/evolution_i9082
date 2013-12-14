@@ -1,6 +1,10 @@
 VERSION = 3
 PATCHLEVEL = 0
+<<<<<<< HEAD
 SUBLEVEL = 35
+=======
+SUBLEVEL = 33
+>>>>>>> parent of 06a24ae... updated to 3.0.34
 EXTRAVERSION =
 NAME = Sneaky Weasel
 
