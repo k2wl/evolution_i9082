@@ -193,8 +193,8 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?= arm
-#CROSS_COMPILE	?= /home/android/linaro4.7/bin/arm-unknown-linux-gnueabi-
-CROSS_COMPILE	?= /home/android/4.6/arm-eabi-4.6/bin/arm-eabi-
+CROSS_COMPILE	?= /home/android/linaro4.7/bin/arm-unknown-linux-gnueabi-
+#CROSS_COMPILE	?= /home/android/4.6/arm-eabi-4.6/bin/arm-eabi-
 #CROSS_COMPILE	?= /home/android/sm4.7/bin/arm-eabi-
 #CROSS_COMPILE   ?= /home/android/linaro4.8/bin/arm-unknown-linux-gnueabi-
 #CROSS_COMPILE	?= /home/android/SM4.8/bin/arm-eabi-
@@ -370,13 +370,17 @@ KBUILD_CPPFLAGS := -D__KERNEL__
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
-		   -Wno-format-security \
-		   -fno-delete-null-pointer-checks
-                   -Wno-maybe-uninitialized \
-                   -Wno-sizeof-pointer-memaccess \
-                   -mtune=cortex-a9 -march=armv7-a -mcpu=cortex-a9 -mfpu=neon -marm 
-                   -munaligned-access -fno-inline-functions \
-                   -ffast-math \
+                   -Wno-format-security -Wno-array-bounds \
+                   -fno-delete-null-pointer-checks \
+                   -mtune=cortex-a9 -marm -march=armv7-a -mcpu=cortex-a9 -fno-pic -mfpu=neon
+                   -ffast-math -funswitch-loops -fpredictive-commoning -fgcse-after-reload \
+                   -fmodulo-sched -fmodulo-sched-allow-regmoves \
+                   -fipa-cp-clone -pipe \
+                   -fgraphite-identity -fsched-spec-load \
+                   -floop-interchange -floop-strip-mine -floop-block \
+                   -fpredictive-commoning -fgcse-after-reload -ftree-vectorize -fipa-cp-clone \
+                   -fmodulo-sched -fmodulo-sched-allow-regmoves \
+                   -ftree-loop-distribution -floop-parallelize-all -ftree-parallelize-loops=4
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
@@ -572,6 +576,13 @@ KBUILD_CFLAGS	+= -Os
 else
 KBUILD_CFLAGS	+= -O2
 endif
+
+ifdef CONFIG_CC_CHECK_WARNING_STRICTLY
+KBUILD_CFLAGS  += -fdiagnostics-show-option \
+                  -Wno-error=unused-function \
+                  -Wno-error=unused-variable \
+                  -Wno-error=unused-value \
+                  -Wno-error=unused-label
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
