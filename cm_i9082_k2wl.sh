@@ -11,13 +11,14 @@ normal='tput sgr0'
 bold='setterm -bold'
 date="date"
 #KERNEL_BUILD="k2wl_Kernel_Jelleybean-`date '+%Y-%m-%d-%H-%M'`" 	
-KBUILD_BUILD_VERSION="0.5"
-KERNEL_BUILD="K2wl-SGGRAND-cm-v0.5-`date '+%Y-%m-%d--%H-%M'`"
+#KBUILD_BUILD_VERSION="0.5.1"
+KERNEL_BUILD="K2wl-SGGRAND-cm-v0.5.1-`date '+%Y-%m-%d--%H-%M'`"
 #KBUILD_BUILD_USER= "k2wl"
 #KBUILD_BUILD_HOST= "k2wlSuperMachine"
+TOOLCHAIN=/home/android/4.6/arm-eabi-4.6/bin/arm-eabi
 #TOOLCHAIN=/home/android/SM4.8/bin/arm-eabi
 #TOOLCHAIN=/home/android/sm4.7/bin/arm-eabi
-TOOLCHAIN=/home/android/linaro4.7/bin/arm-unknown-linux-gnueabi
+#TOOLCHAIN=/home/android/linaro4.7/bin/arm-unknown-linux-gnueabi
 #TOOLCHAIN=/home/android/linaro4.8/bin/arm-unknown-linux-gnueabi
 $yellow
 MODULES=./k2wl/system/lib/modules
