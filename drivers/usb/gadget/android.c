@@ -51,7 +51,7 @@
 #include "u_serial.c"
 #include "f_acm.c"
 #include "f_adb.c"
-#include "f_mtp.c"
+#include "f_mtp_samsung.c"
 #include "f_accessory.c"
 #define USB_ETH_RNDIS y
 #include "f_rndis.c"
@@ -151,7 +151,7 @@ static struct usb_device_descriptor device_desc = {
 	.bLength              = sizeof(device_desc),
 	.bDescriptorType      = USB_DT_DEVICE,
 	.bcdUSB               = __constant_cpu_to_le16(0x0200),
-	.bDeviceClass         = USB_CLASS_PER_INTERFACE,
+	.bDeviceClass         = 0xEF,/*USB_CLASS_PER_INTERFACE,*/ //120726 Change DeviceClass value to 0xEF to fix the CV test issue
 	.idVendor             = __constant_cpu_to_le16(VENDOR_ID),
 	.idProduct            = __constant_cpu_to_le16(PRODUCT_ID),
 	.bcdDevice            = __constant_cpu_to_le16(0xffff),
@@ -259,26 +259,28 @@ static int adb_function_bind_config(struct android_usb_function *f, struct usb_c
 
 static void adb_android_function_enable(struct android_usb_function *f)
 {
-	struct android_dev *dev = _android_dev;
+/*	struct android_dev *dev = _android_dev; */
 	struct adb_data *data = f->config;
 
 	data->enabled = true;
 
 	/* Disable the gadget until adbd is ready */
-	if (!data->opened)
-		android_disable(dev);
+	/* Removed: can not pass USB CV test ....  */
+	/* if (!data->opened)
+		android_disable(dev); */
 }
 
 static void adb_android_function_disable(struct android_usb_function *f)
 {
-	struct android_dev *dev = _android_dev;
+/*	struct android_dev *dev = _android_dev; */
 	struct adb_data *data = f->config;
 
 	data->enabled = false;
 
 	/* Balance the disable that was called in closed_callback */
-	if (!data->opened)
-		android_enable(dev);
+	/* Removed: can not pass USB CV test ....  */
+	/*if (!data->opened)
+		android_enable(dev); */
 }
 
 static struct android_usb_function adb_function = {
@@ -298,8 +300,9 @@ static void adb_ready_callback(void)
 	mutex_lock(&dev->mutex);
 
 	data->opened = true;
-	if (data->enabled)
-		android_enable(dev);
+	/* Removed: can not pass USB CV test ....  */
+	/*if (data->enabled)
+		android_enable(dev); */
 
 	mutex_unlock(&dev->mutex);
 }
@@ -312,8 +315,9 @@ static void adb_closed_callback(void)
 	mutex_lock(&dev->mutex);
 
 	data->opened = false;
-	if (data->enabled)
-		android_disable(dev);
+	/* Removed: can not pass USB CV test ....  */
+	/*if (data->enabled)
+		android_disable(dev);*/
 
 	mutex_unlock(&dev->mutex);
 }

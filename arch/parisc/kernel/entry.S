@@ -581,15 +581,7 @@
 	 */
 	cmpiclr,=	0x01,\tmp,%r0
 	ldi		(_PAGE_DIRTY|_PAGE_READ|_PAGE_WRITE),\prot
-<<<<<<< HEAD
 	depd,z		\prot,8,7,\prot
-=======
-#ifdef CONFIG_64BIT
-	depd,z		\prot,8,7,\prot
-#else
-	depw,z		\prot,8,7,\prot
-#endif
->>>>>>> ce25734... 3.0.33
 	/*
 	 * OK, it is in the temp alias region, check whether "from" or "to".
 	 * Check "subtle" note in pacache.S re: r23/r26.

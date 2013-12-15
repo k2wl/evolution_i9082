@@ -692,11 +692,7 @@ ENTRY(flush_icache_page_asm)
 
 	/* Purge any old translation */
 
-<<<<<<< HEAD
 	pitlb		(%sr0,%r28)
-=======
-	pitlb		(%sr4,%r28)
->>>>>>> ce25734... 3.0.33
 
 	ldil		L%icache_stride, %r1
 	ldw		R%icache_stride(%r1), %r1
@@ -710,7 +706,6 @@ ENTRY(flush_icache_page_asm)
 	sub		%r25, %r1, %r25
 
 
-<<<<<<< HEAD
 1:      fic,m		%r1(%r28)
 	fic,m		%r1(%r28)
 	fic,m		%r1(%r28)
@@ -732,31 +727,6 @@ ENTRY(flush_icache_page_asm)
 	sync
 	bv		%r0(%r2)
 	pitlb		(%sr0,%r25)
-=======
-	/* fic only has the type 26 form on PA1.1, requiring an
-	 * explicit space specification, so use %sr4 */
-1:      fic,m		%r1(%sr4,%r28)
-	fic,m		%r1(%sr4,%r28)
-	fic,m		%r1(%sr4,%r28)
-	fic,m		%r1(%sr4,%r28)
-	fic,m		%r1(%sr4,%r28)
-	fic,m		%r1(%sr4,%r28)
-	fic,m		%r1(%sr4,%r28)
-	fic,m		%r1(%sr4,%r28)
-	fic,m		%r1(%sr4,%r28)
-	fic,m		%r1(%sr4,%r28)
-	fic,m		%r1(%sr4,%r28)
-	fic,m		%r1(%sr4,%r28)
-	fic,m		%r1(%sr4,%r28)
-	fic,m		%r1(%sr4,%r28)
-	fic,m		%r1(%sr4,%r28)
-	cmpb,COND(<<)		%r28, %r25,1b
-	fic,m		%r1(%sr4,%r28)
-
-	sync
-	bv		%r0(%r2)
-	pitlb		(%sr4,%r25)
->>>>>>> ce25734... 3.0.33
 	.exit
 
 	.procend

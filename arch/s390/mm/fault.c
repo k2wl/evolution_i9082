@@ -567,10 +567,6 @@ static void pfault_interrupt(unsigned int ext_int_code,
 			tsk->thread.pfault_wait = 0;
 			list_del(&tsk->thread.list);
 			wake_up_process(tsk);
-<<<<<<< HEAD
-=======
-			put_task_struct(tsk);
->>>>>>> ce25734... 3.0.33
 		} else {
 			/* Completion interrupt was faster than initial
 			 * interrupt. Set pfault_wait to -1 so the initial
@@ -580,30 +576,14 @@ static void pfault_interrupt(unsigned int ext_int_code,
 		put_task_struct(tsk);
 	} else {
 		/* signal bit not set -> a real page is missing. */
-<<<<<<< HEAD
 		if (tsk->thread.pfault_wait == -1) {
-=======
-		if (tsk->thread.pfault_wait == 1) {
-			/* Already on the list with a reference: put to sleep */
-			set_task_state(tsk, TASK_UNINTERRUPTIBLE);
-			set_tsk_need_resched(tsk);
-		} else if (tsk->thread.pfault_wait == -1) {
->>>>>>> ce25734... 3.0.33
 			/* Completion interrupt was faster than the initial
 			 * interrupt (pfault_wait == -1). Set pfault_wait
 			 * back to zero and exit. */
 			tsk->thread.pfault_wait = 0;
 		} else {
 			/* Initial interrupt arrived before completion
-<<<<<<< HEAD
 			 * interrupt. Let the task sleep. */
-=======
-			 * interrupt. Let the task sleep.
-			 * An extra task reference is needed since a different
-			 * cpu may set the task state to TASK_RUNNING again
-			 * before the scheduler is reached. */
-			get_task_struct(tsk);
->>>>>>> ce25734... 3.0.33
 			tsk->thread.pfault_wait = 1;
 			list_add(&tsk->thread.list, &pfault_list);
 			set_task_state(tsk, TASK_UNINTERRUPTIBLE);
@@ -628,10 +608,6 @@ static int __cpuinit pfault_cpu_notify(struct notifier_block *self,
 			list_del(&thread->list);
 			tsk = container_of(thread, struct task_struct, thread);
 			wake_up_process(tsk);
-<<<<<<< HEAD
-=======
-			put_task_struct(tsk);
->>>>>>> ce25734... 3.0.33
 		}
 		spin_unlock_irq(&pfault_lock);
 		break;
