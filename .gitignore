@@ -33,6 +33,7 @@ modules.builtin
 *.patch
 *.gcno
 out
+drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c
 
 #
 # Top-level generic files
