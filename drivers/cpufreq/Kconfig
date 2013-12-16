@@ -54,13 +54,6 @@ config CPU_FREQ_STAT_DETAILS
 
 	  If in doubt, say N.
 
-config QUAD_CORES_SOC_STAT
-	bool "Overall statistic details for quadcore SOCs"
-	depends on CPU_FREQ_STAT
-	default n
-	help
-	  This will show overall CPU frequency statistics via sysfs.
-	  If this option is not set, it defaults to dual core stats
 
 choice
 	prompt "Default CPUFreq governor"
@@ -142,8 +135,6 @@ config CPU_FREQ_DEFAULT_GOV_INTERACTIVE
 	  loading your cpufreq low-level hardware driver, using the
 	  'interactive' governor for latency-sensitive workloads.
 
-<<<<<<< HEAD
-=======
 config CPU_FREQ_DEFAULT_GOV_ADAPTIVE
 	bool "adaptive"
 	select CPU_FREQ_GOV_ADAPTIVE
@@ -177,7 +168,6 @@ config CPU_FREQ_DEFAULT_GOV_SMARTASS2
     help
     Use the CPUFreq governor 'smartassV2' as default.
 
->>>>>>> 5adb337... Governors: Add ondemand-smartassV2-pegasusq-zzmoove-lulzactiveq-hotplug
 endchoice
 
 config CPU_FREQ_GOV_PERFORMANCE
@@ -255,31 +245,6 @@ config CPU_FREQ_GOV_ONDEMAND
 
 	  If in doubt, say N.
 
-<<<<<<< HEAD
-=======
-config CPU_FREQ_GOV_ONDEMAND_FLEXRATE
-	bool "flexrate interface for 'ondemand' cpufreq policy governor"
-	depends on CPU_FREQ_GOV_ONDEMAND || CPU_FREQ_GOV_PEGASUSQ
-	help
-	  Flexrate for 'ondemand' governor provides an interface to request
-	  faster polling temporarily. This is to let it react quickly to
-	  load changes when there is high probablity of load increase
-	  in short time. For example, when a user event occurs, we have
-	  use this interface. It does not increase the frequency
-	  unconditionally; however, it allows ondemand to react fast
-	  by temporarily decreasing sampling rate. Flexrate provides both
-	  sysfs interface and in-kernel interface.
-
-config CPU_FREQ_GOV_ONDEMAND_FLEXRATE_MAX_DURATION
-	int "flexrate's maximum duration of sampling rate override"
-	range 5 500
-	depends on CPU_FREQ_GOV_ONDEMAND_FLEXRATE
-	default "100"
-	help
-	  The maximum number of ondemand sampling whose rate is
-	  overriden by Flexrate for ondemand.
-
->>>>>>> 5adb337... Governors: Add ondemand-smartassV2-pegasusq-zzmoove-lulzactiveq-hotplug
 config CPU_FREQ_GOV_INTERACTIVE
 	tristate "'interactive' cpufreq policy governor"
 	help
@@ -320,8 +285,6 @@ config CPU_FREQ_GOV_CONSERVATIVE
 
 	  If in doubt, say N.
 
-<<<<<<< HEAD
-=======
 config CPU_FREQ_GOV_ADAPTIVE
 	tristate "'adaptive' cpufreq policy governor"
 	help
@@ -356,14 +319,6 @@ config CPU_FREQ_GOV_PEGASUSQ
 config CPU_FREQ_GOV_SLP
 	tristate "'slp' cpufreq policy governor"
 
-config SLP_CHECK_CPU_LOAD
-        bool "check load and frequency of cpu"
-	depends on CPU_FREQ_GOV_SLP
-
-config SLP_GOV_DYNAMIC_PARAMS
-        bool "check SLP GOV. Dynamic Params feature"
-	depends on CPU_FREQ_GOV_SLP
-
 config CPU_FREQ_GOV_LULZACTIVEQ
         tristate "'lulzactiveq' cpufreq governor"
         depends on CPU_FREQ
@@ -380,15 +335,6 @@ config CPU_FREQ_GOV_ZZMOOVE
 
     If in doubt, say N.
 
-config CPU_FREQ_DVFS_MONITOR
-	bool "dvfs monitor"
-	depends on CPU_FREQ
-	help
-	  This option adds a proc node for dvfs monitoring.
-	  /proc/dvfs_mon
-
-
->>>>>>> 5adb337... Governors: Add ondemand-smartassV2-pegasusq-zzmoove-lulzactiveq-hotplug
 menu "x86 CPU frequency scaling drivers"
 depends on X86
 source "drivers/cpufreq/Kconfig.x86"
