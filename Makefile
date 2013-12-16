@@ -583,6 +583,7 @@ KBUILD_CFLAGS  += -fdiagnostics-show-option \
                   -Wno-error=unused-variable \
                   -Wno-error=unused-value \
                   -Wno-error=unused-label
+endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 

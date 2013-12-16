@@ -101,7 +101,7 @@ KBUILD_CFLAGS = $(subst -pg, , $(ORIG_CFLAGS))
 endif
 
 ccflags-y := -fpic -fno-builtin
-asflags-y := -Wa,-march=all
+asflags-y := -Wa,-march=armv7-a
 
 # Supply ZRELADDR to the decompressor via a linker symbol.
 ifneq ($(CONFIG_AUTO_ZRELADDR),y)
@@ -145,7 +145,7 @@ $(obj)/longlong.h: $(srctree)/arch/$(SRCARCH)/lib/longlong.h FORCE
 $(obj)/divdi3.c: $(srctree)/arch/$(SRCARCH)/lib/divdi3.c $(obj)/longlong.h FORCE
 	$(call cmd,shipped)
 
-$(obj)/vmlinux: $(obj)/vmlinux.lds $(obj)/$(HEAD) $(obj)$(MISC) $(obj)/$(DECOMPRESS) $(obj)/piggy.$(suffix_y).o \
+$(obj)/vmlinux: $(obj)/vmlinux.lds $(obj)/$(HEAD) $(obj)/$(MISC) $(obj)/$(DECOMPRESS) $(obj)/piggy.$(suffix_y).o \
 	 	$(addprefix $(obj)/, $(OBJS)) $(lib1funcs) FORCE
 	$(call if_changed,ld)
 	@$(check_for_bad_syms)
