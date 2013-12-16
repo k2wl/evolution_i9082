@@ -32,6 +32,7 @@ modules.builtin
 *.lzo
 *.patch
 *.gcno
+out
 
 #
 # Top-level generic files
@@ -59,7 +60,7 @@ include/config
 include/linux/version.h
 include/generated
 arch/*/include/generated
-
+drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c
 # stgit generated dirs
 patches-*
 
