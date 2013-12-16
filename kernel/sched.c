@@ -637,15 +637,15 @@ static inline void set_task_rq(struct task_struct *p, unsigned int cpu)
 {
 #if defined(CONFIG_FAIR_GROUP_SCHED) || defined(CONFIG_RT_GROUP_SCHED)
   struct task_group *tg = task_group(p);
-#endif 
+#endif
 #ifdef CONFIG_FAIR_GROUP_SCHED
-  	p->se.cfs_rq = tg->cfs_rq[cpu];
-  	p->se.parent = tg->se[cpu];
+ 	p->se.cfs_rq = tg->cfs_rq[cpu];
+ 	p->se.parent = tg->se[cpu];
 #endif
 
 #ifdef CONFIG_RT_GROUP_SCHED
 	p->rt.rt_rq  = tg->rt_rq[cpu];
-	p->rt.parent = tg->rt_se[cpu]; 
+	p->rt.parent = tg->rt_se[cpu];
 #endif
 }
 
