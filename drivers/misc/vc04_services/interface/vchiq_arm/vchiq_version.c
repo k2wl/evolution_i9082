@@ -2,7 +2,7 @@
 #include <linux/broadcom/vc_debug_sym.h>
 
 VC_DEBUG_DECLARE_STRING_VAR( vchiq_build_hostname, "android" );
-VC_DEBUG_DECLARE_STRING_VAR( vchiq_build_version, "fcb05c5bc0be1e2b116dc538e7e7b9a597377a20 (tainted)" );
+VC_DEBUG_DECLARE_STRING_VAR( vchiq_build_version, "8d31c614e6dc8ac886db2f425d348abfb172e7c6 (tainted)" );
 VC_DEBUG_DECLARE_STRING_VAR( vchiq_build_time,    __TIME__ );
 VC_DEBUG_DECLARE_STRING_VAR( vchiq_build_date,    __DATE__ );
 
