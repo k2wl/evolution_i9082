@@ -832,10 +832,4 @@ source "drivers/misc/vc04_services/Kconfig"
 source "drivers/misc/emmc_rpmb/Kconfig"
 source "drivers/misc/modem_if/Kconfig"
 
-config TOUCH_WAKE
-	bool "Support for Touch Wake"
-	default y
-	help
-		Say Y here to enable Touch Wake
-
 endif # MISC_DEVICES
