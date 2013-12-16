@@ -54,6 +54,14 @@ config CPU_FREQ_STAT_DETAILS
 
 	  If in doubt, say N.
 
+config QUAD_CORES_SOC_STAT
+	bool "Overall statistic details for quadcore SOCs"
+	depends on CPU_FREQ_STAT
+	default n
+	help
+	  This will show overall CPU frequency statistics via sysfs.
+	  If this option is not set, it defaults to dual core stats
+
 choice
 	prompt "Default CPUFreq governor"
 	default CPU_FREQ_DEFAULT_GOV_USERSPACE if CPU_FREQ_SA1100 || CPU_FREQ_SA1110
@@ -134,6 +142,8 @@ config CPU_FREQ_DEFAULT_GOV_INTERACTIVE
 	  loading your cpufreq low-level hardware driver, using the
 	  'interactive' governor for latency-sensitive workloads.
 
+<<<<<<< HEAD
+=======
 config CPU_FREQ_DEFAULT_GOV_ADAPTIVE
 	bool "adaptive"
 	select CPU_FREQ_GOV_ADAPTIVE
@@ -167,6 +177,7 @@ config CPU_FREQ_DEFAULT_GOV_SMARTASS2
     help
     Use the CPUFreq governor 'smartassV2' as default.
 
+>>>>>>> 5adb337... Governors: Add ondemand-smartassV2-pegasusq-zzmoove-lulzactiveq-hotplug
 endchoice
 
 config CPU_FREQ_GOV_PERFORMANCE
