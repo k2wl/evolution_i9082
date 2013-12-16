@@ -31,11 +31,8 @@
 #include <asm/cacheflush.h>
 #include <asm/cpu.h>
 #include <asm/cputype.h>
-<<<<<<< HEAD
 #include <asm/idmap.h>
-=======
 #include <asm/topology.h>
->>>>>>> 1b34b84... Full ARM Topology + optimizations
 #include <asm/mmu_context.h>
 #include <asm/pgtable.h>
 #include <asm/pgalloc.h>
