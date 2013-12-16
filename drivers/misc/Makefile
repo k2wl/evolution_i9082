@@ -84,3 +84,5 @@ obj-$(CONFIG_USB_SWITCH_FSA9485) += fsa9485.o
 obj-$(CONFIG_BCM_VC_SERVICES) += vc04_services/
 obj-$(CONFIG_BRCM_EMMC_RPMB)	+= emmc_rpmb/
 obj-$(CONFIG_SEC_MODEM)		+= modem_if/
+# Touchwake
+obj-$(CONFIG_TOUCH_WAKE)	+= touch_wake.o
