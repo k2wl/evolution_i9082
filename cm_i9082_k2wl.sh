@@ -158,6 +158,7 @@ mkdir out/system
 mkdir out/system/lib
 cp -avr k2wl/flash/META-INF/ out/
 cp -avr k2wl/system/lib/modules/ out/system/lib/
+cp input_bootimage/VoiceSolution.ko out/system/lib/
 cp output/boot.img out/boot.img
 cd out
 zip -r $KERNEL_BUILD.zip *
