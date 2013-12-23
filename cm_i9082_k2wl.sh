@@ -12,7 +12,7 @@ bold='setterm -bold'
 date="date"
 #KERNEL_BUILD="k2wl_Kernel_Jelleybean-`date '+%Y-%m-%d-%H-%M'`" 	
 #KBUILD_BUILD_VERSION="0.5.1"
-KERNEL_BUILD="K2wl-SGGRAND-cm-v0.6-`date '+%Y-%m-%d--%H-%M'`"
+KERNEL_BUILD="K2wl-SGGRAND-cm-v0.8-`date '+%Y-%m-%d--%H-%M'`"
 #KBUILD_BUILD_USER= "k2wl"
 #KBUILD_BUILD_HOST= "k2wlSuperMachine"
 #TOOLCHAIN=/home/android/4.6/arm-eabi-4.6/bin/arm-eabi
@@ -52,14 +52,14 @@ echo " |========================================================================
 $normal
 
 
-if [ -n VERSION ]; then
-echo "Release version is 0"
-echo "0" > .version
-else 
-echo "Release version is $VERSION" 
-echo $VERSION > .version
-rm VERSION
-fi
+#if [ -n VERSION ]; then
+#echo "Release version is 0"
+#echo "0" > .version
+#else 
+#echo "Release version is $VERSION" 
+#echo $VERSION > .version
+#rm VERSION
+#fi
 
 $cyan
 echo "Cleaning"

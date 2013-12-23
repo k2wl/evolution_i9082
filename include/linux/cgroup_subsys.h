@@ -64,18 +64,9 @@ SUBSYS(perf)
 #endif
 
 /* */
-<<<<<<< HEAD
-=======
-
-#ifdef CONFIG_CGROUP_TIMER_SLACK
-SUBSYS(timer_slack)
-#endif
-
-/* */
 
 #ifdef CONFIG_CGROUP_BFQIO
 SUBSYS(bfqio)
 #endif
 
 /* */
->>>>>>> 406f5ec... block: cgroups, kconfig, build bits for BFQ-v6r2-3.0
