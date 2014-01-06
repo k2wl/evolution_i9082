@@ -667,6 +667,11 @@ void putback_lru_page(struct page *page)
 		SetPageWasActive(page);
 #endif
 
+#ifdef CONFIG_CLEANCACHE
+  if (active)
+    SetPageWasActive(page);
+#endif
+
 redo:
 	ClearPageUnevictable(page);
 
@@ -1302,7 +1307,7 @@ static unsigned long clear_active_flags(struct list_head *page_list,
 			ClearPageActive(page);
 
 #ifdef CONFIG_CLEANCACHE
-			SetPageWasActive(page);
+		        SetPageWasActive(page);
 #endif
 
 			nr_active += numpages;
