@@ -1,8 +1,8 @@
 #include "vchiq_build_info.h"
 #include <linux/broadcom/vc_debug_sym.h>
 
-VC_DEBUG_DECLARE_STRING_VAR( vchiq_build_hostname, "android" );
-VC_DEBUG_DECLARE_STRING_VAR( vchiq_build_version, "2c03ea8fd042dadaed7606a41b57e8e0ba99ead1 (tainted)" );
+VC_DEBUG_DECLARE_STRING_VAR( vchiq_build_hostname, "SEV-DEV-SOLUTION" );
+VC_DEBUG_DECLARE_STRING_VAR( vchiq_build_version, "unknown" );
 VC_DEBUG_DECLARE_STRING_VAR( vchiq_build_time,    __TIME__ );
 VC_DEBUG_DECLARE_STRING_VAR( vchiq_build_date,    __DATE__ );
 
