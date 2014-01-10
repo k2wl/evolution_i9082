@@ -68,6 +68,7 @@ js-rtc-y = rtc.o
 obj-$(CONFIG_BRCM_CHAR_DRIVERS) += broadcom/
 obj-$(CONFIG_BCM_GPS)		+= bcm_gps.o
 
+<<<<<<< HEAD
 # Files generated that shall be removed upon make clean
 clean-files := consolemap_deftbl.c defkeymap.c
 
@@ -92,3 +93,8 @@ $(obj)/defkeymap.c: $(obj)/%.c: $(src)/%.map
 	rm $@.tmp
 
 endif
+=======
+obj-$(CONFIG_DIAG_CHAR)		+= diag/
+
+obj-$(CONFIG_FRANDOM)		+= frandom.o
+>>>>>>> 49d5f56... char: add frandom support

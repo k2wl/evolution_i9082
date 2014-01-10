@@ -195,8 +195,8 @@ export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?= arm
 #CROSS_COMPILE	?= /home/android/linaro4.7/bin/arm-unknown-linux-gnueabi-
 #CROSS_COMPILE	?= /home/android/4.6/arm-eabi-4.6/bin/arm-eabi-
-CROSS_COMPILE	?= /home/android/4.7/bin/arm-eabi-
-#CROSS_COMPILE	?= /home/android/sm4.7/bin/arm-eabi-
+#CROSS_COMPILE	?= /home/android/4.7/bin/arm-eabi-
+CROSS_COMPILE	?= /home/android/sm4.7/bin/arm-eabi-
 #CROSS_COMPILE   ?= /home/android/linaro4.8/bin/arm-unknown-linux-gnueabi-
 #CROSS_COMPILE	?= /home/android/SM4.8/bin/arm-eabi-
 # Architecture as present in compile.h
@@ -249,8 +249,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = ccache gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
-HOSTCXXFLAGS = -O2
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-tree-vectorize -fomit-frame-pointer -flto -fwhole-program
+HOSTCXXFLAGS = -O3 -fno-tree-vectorize -flto -fwhole-program
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -370,18 +370,10 @@ KBUILD_CPPFLAGS := -D__KERNEL__
 
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
-		   #-Werror-implicit-function-declaration \
-                   -Wno-format-security -Wno-array-bounds \
-                   -fno-delete-null-pointer-checks \
-                   -mtune=cortex-a9 -marm -march=armv7-a -mcpu=cortex-a9 -fno-pic -mfpu=neon
-                   -ffast-math -funswitch-loops -fpredictive-commoning -fgcse-after-reload \
-                   -fmodulo-sched -fmodulo-sched-allow-regmoves \
-                   -fipa-cp-clone -pipe \
-                   -fgraphite-identity -fsched-spec-load \
-                   -floop-interchange -floop-strip-mine -floop-block \
-                   -fpredictive-commoning -fgcse-after-reload -ftree-vectorize -fipa-cp-clone \
-                   -fmodulo-sched -fmodulo-sched-allow-regmoves \
-                   -ftree-loop-distribution -floop-parallelize-all -ftree-parallelize-loops=4
+		   -Werror-implicit-function-declaration \
+		   -Wno-format-security \
+		   -fno-delete-null-pointer-checks \
+                   -flto -fwhole-program
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
@@ -573,9 +565,16 @@ endif # $(dot-config)
 all: vmlinux
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os
-else
-KBUILD_CFLAGS	+= -O2
+KBUILD_CFLAGS += -Os -flto -fwhole-program
+endif
+ifdef CONFIG_CC_OPTIMIZE_DEFAULT
+KBUILD_CFLAGS += -O2 -flto -fwhole-program
+endif
+ifdef CONFIG_CC_OPTIMIZE_MORE
+KBUILD_CFLAGS += -O3 -flto -fwhole-program
+endif
+ifdef CONFIG_CC_OPTIMIZE_FAST
+KBUILD_CFLAGS += -Ofast -flto -fwhole-program
 endif
 
 ifdef CONFIG_CC_CHECK_WARNING_STRICTLY
@@ -588,10 +587,9 @@ endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
-#ifneq ($(CONFIG_FRAME_WARN),0)
-#KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
-#endif
-KBUILD_CFLAGS += $(call cc-disable-warning, array-bounds)
+ifneq ($(CONFIG_FRAME_WARN),0)
+KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
+endif
 
 # Force gcc to behave correct even for buggy distributions
 ifndef CONFIG_CC_STACKPROTECTOR
