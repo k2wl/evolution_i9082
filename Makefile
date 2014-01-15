@@ -193,12 +193,9 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?= arm
-#CROSS_COMPILE	?= /home/android/linaro4.7/bin/arm-unknown-linux-gnueabi-
-#CROSS_COMPILE	?= /home/android/4.6/arm-eabi-4.6/bin/arm-eabi-
-#CROSS_COMPILE	?= /home/android/4.7/bin/arm-eabi-
-CROSS_COMPILE	?= /home/android/sm4.7/bin/arm-eabi-
-#CROSS_COMPILE   ?= /home/android/linaro4.8/bin/arm-unknown-linux-gnueabi-
+#CROSS_COMPILE	?= /home/android/linaro-k2wl-4.7/bin/arm-cortex_a9-linux-gnueabi-
 #CROSS_COMPILE	?= /home/android/SM4.8/bin/arm-eabi-
+CROSS_COMPILE	?= /home/android/arm-cortex_a9-linux-gnueabi/bin/arm-cortex_a9-linux-gnueabi-
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
 SRCARCH 	:= $(ARCH)
@@ -248,9 +245,9 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else echo sh; fi ; fi)
 
 HOSTCC       = ccache gcc
-HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-tree-vectorize -fomit-frame-pointer -flto -fwhole-program
-HOSTCXXFLAGS = -O3 -fno-tree-vectorize -flto -fwhole-program
+HOSTCXX      = ccache g++
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
+HOSTCXXFLAGS = -O2
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -372,8 +369,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
-		   -fno-delete-null-pointer-checks \
-                   -flto -fwhole-program
+		   -fno-delete-null-pointer-checks
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
@@ -565,24 +561,9 @@ endif # $(dot-config)
 all: vmlinux
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS += -Os -flto -fwhole-program
-endif
-ifdef CONFIG_CC_OPTIMIZE_DEFAULT
-KBUILD_CFLAGS += -O2 -flto -fwhole-program
-endif
-ifdef CONFIG_CC_OPTIMIZE_MORE
-KBUILD_CFLAGS += -O3 -flto -fwhole-program
-endif
-ifdef CONFIG_CC_OPTIMIZE_FAST
-KBUILD_CFLAGS += -Ofast -flto -fwhole-program
-endif
-
-ifdef CONFIG_CC_CHECK_WARNING_STRICTLY
-KBUILD_CFLAGS  += -fdiagnostics-show-option \
-                  -Wno-error=unused-function \
-                  -Wno-error=unused-variable \
-                  -Wno-error=unused-value \
-                  -Wno-error=unused-label
+KBUILD_CFLAGS	+= -Os
+else
+KBUILD_CFLAGS	+= -O2
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
@@ -729,7 +710,7 @@ export mod_strip_cmd
 
 
 ifeq ($(KBUILD_EXTMOD),)
-core-y		+= kernel/ mm/ fs/ ipc/ security/ crypto/ block/ frandom/
+core-y		+= kernel/ mm/ fs/ ipc/ security/ crypto/ block/
 
 vmlinux-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
 		     $(core-y) $(core-m) $(drivers-y) $(drivers-m) \
@@ -1182,7 +1163,7 @@ CLEAN_FILES +=	vmlinux System.map \
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config usr/include include/generated          \
                   arch/*/include/generated
-MRPROPER_FILES += .config .config.old .old_version             \
+MRPROPER_FILES += .config .config.old .version .old_version             \
                   include/linux/version.h                               \
 		  Module.symvers tags TAGS cscope* GPATH GTAGS GRTAGS GSYMS
 
