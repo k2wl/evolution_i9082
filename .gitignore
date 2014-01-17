@@ -60,10 +60,15 @@ include/config
 include/linux/version.h
 include/generated
 arch/*/include/generated
-out
-output
-input_bootimage
-k2wl
+out/
+output/
+input_bootimage/
+k2wl/
+
+# My ignored files and folders
+drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c
+output/
+out/zip/
 
 # stgit generated dirs
 patches-*
