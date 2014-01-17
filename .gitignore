@@ -69,6 +69,7 @@ k2wl/
 drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c
 output/
 out/zip/
+../../../../../vchiq_version.c
 
 # stgit generated dirs
 patches-*
