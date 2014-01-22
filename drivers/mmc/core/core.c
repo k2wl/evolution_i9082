@@ -1483,16 +1483,7 @@ out:
 int mmc_erase(struct mmc_card *card, unsigned int from, unsigned int nr,
 	      unsigned int arg)
 {
-	if(arg == MMC_TRIM_ARG) {
-		if ((from % 32) != 0)
-			from = ((from >> 5) + 1) << 5;
-
-		to = (to >> 5) << 5;
-		if (from >= to)
-			return 0;
-	}
-
-	printk("%s: mmc_erase() disabled for protection. from = %u, nr = %u, arg = %u\n",
+   		printk("%s: mmc_erase() disabled for protection. from = %u, nr = %u, arg = %u\n",
 			__func__,from,nr,arg);
 	return -EOPNOTSUPP;
 }
