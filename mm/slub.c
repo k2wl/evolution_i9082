@@ -1302,7 +1302,7 @@ static void __free_slab(struct kmem_cache *s, struct page *page)
 		-pages);
 
 	__ClearPageSlab(page);
-	page_mapcount_reset(page);
+	reset_page_mapcount(page);
 	if (current->reclaim_state)
 		current->reclaim_state->reclaimed_slab += pages;
 	__free_pages(page, order);
