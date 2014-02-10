@@ -124,7 +124,7 @@ struct size_class {
 	unsigned int index;
 
 	/* Number of PAGE_SIZE sized pages to combine to form a 'zspage' */
-	int pages_per_zspage;
+	int zspage_order;
 
 	spinlock_t lock;
 
