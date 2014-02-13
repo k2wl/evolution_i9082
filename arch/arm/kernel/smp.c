@@ -31,11 +31,9 @@
 #include <asm/cacheflush.h>
 #include <asm/cpu.h>
 #include <asm/cputype.h>
-<<<<<<< HEAD
+
 #include <asm/idmap.h>
-=======
 #include <asm/topology.h>
->>>>>>> e3eacda... Full ARM Topology + optimizations
 #include <asm/mmu_context.h>
 #include <asm/pgtable.h>
 #include <asm/pgalloc.h>
