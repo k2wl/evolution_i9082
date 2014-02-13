@@ -28,6 +28,13 @@ export KBUILD_BUILD_USER="k2wl"
 KERNEL_BUILD="EvolutionKernel-v1.3-k2wl-`date '+%Y%m%d-%H%M'`"
 TOOLCHAIN=/home/k2wl/k2wl-linaro-4.8/bin/arm-cortex_a9-linux-gnueabi-
 
+#ftpstuff
+RETRY="60s";
+MAXCOUNT=30;
+HOST="androidfilehost.com"
+USER="k2wl"
+PASS='uDRMO4mgC2'
+
 
 # Variables
 MODULES=./output/flashablezip/system/lib/modules
@@ -222,6 +229,7 @@ echo ""
 echo ""
 mkdir old_builds_zip
 mv outputzip/*.zip old_builds_zip/
+mv outputzip/*.zip.md5 old_builds_zip/
 
 echo ""
 echo ""
@@ -235,7 +243,26 @@ echo ""
 echo "==========================================================="
 echo ""
 echo ""
+#echo "[BUILD]: Creating sha1 & md5 sums...";
+#md5sum "$KERNEL_BUILD".zip > "$KERNEL_BUILD".zip.md5
+#sha1sum "$KERNEL_BUILD".zip > "$KERNEL_BUILD".zip.sha1
 
+#uploading to ftp
+
+
+#echo "[BUILD]: Uploading files to $HOST...";
+# Uses the ftp command with the -inv switches.
+# -i turns off interactive prompting
+# -n Restrains FTP from attempting the auto-login feature
+# -v enables verbose and progress
+#ftp -inv $HOST << End-Of-Session
+#user $USER $PASS
+#cd /kernelaosp
+#put "$KERNEL_BUILD".zip.md5
+#put "$KERNEL_BUILD".zip
+#put "$KERNEL_BUILD".zip.sha1
+#bye
+#End-Of-Session
 
 # Cleaning
 $blue
