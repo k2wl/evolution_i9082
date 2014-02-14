@@ -1,0 +1,3 @@
+- Stock 'boot.img' for AOSP KitKat 4.4.x
+- Stock 'kernel' for AOSP KitKat 4.4.x
+- Stock 'ramdisk' for AOSP KitKat 4.4.x
