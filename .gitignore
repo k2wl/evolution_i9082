@@ -33,6 +33,7 @@ modules.builtin
 *.patch
 *.gcno
 out/*.zip
+*.zip
 
 #
 # Top-level generic files
@@ -64,6 +65,8 @@ out/
 output/
 input_bootimage/
 k2wl/
+processing_tools/
+bootimg/
 
 # My ignored files and folders
 drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c
