@@ -12,15 +12,14 @@ bold='setterm -bold'
 date="date"
 #KERNEL_BUILD="k2wl_Kernel_Jelleybean-`date '+%Y-%m-%d-%H-%M'`" 	
 #KBUILD_BUILD_VERSION="0.5.1"
-KERNEL_BUILD="K2wl-SGGRAND-cm-v1.0-`date '+%Y-%m-%d--%H-%M'`"
+KERNEL_BUILD="K2wl-SGGRAND-aosp-v1.3-`date '+%Y-%m-%d--%H-%M'`"
 #KBUILD_BUILD_USER= "k2wl"
 #KBUILD_BUILD_HOST= "k2wlSuperMachine"
 #TOOLCHAIN=/home/android/4.6/arm-eabi-4.6/bin/arm-eabi
+TOOLCHAIN=/home/k2wl/k2wl-linaro-4.8/bin/arm-cortex_a9-linux-gnueabi
 #TOOLCHAIN=/home/android/4.7/bin/arm-eabi
 #TOOLCHAIN=/home/android/SM4.8/bin/arm-eabi
-TOOLCHAIN=/home/android/k2wl4.8/bin/arm-cortex_a9-linux-gnueabi
 #TOOLCHAIN=/home/android/sm4.7/bin/arm-eabi
-#TOOLCHAIN=/home/android/linaro-k2wl-4.7/bin/arm-cortex_a9-linux-gnueabi-
 #TOOLCHAIN=/home/android/linaro4.7/bin/arm-unknown-linux-gnueabi
 #TOOLCHAIN=/home/android/linaro4.8/bin/arm-unknown-linux-gnueabi
 $yellow
@@ -67,9 +66,9 @@ $cyan
 echo "Cleaning"
 $violet
 make clean
-cd out
-rm kernel.zip
-cd ../
+#cd out
+#rm kernel.zip
+#cd ../
 cd output
 rm boot.img
 cd ../
@@ -89,12 +88,12 @@ clear
 $cyan
 echo "Making the zImage-the real deal"
 $violet
-make -j1
+make -j16
 clear
 $cyan 
 mkdir k2wl/bootimage/source_img
 echo "Processing the Bootimage"
-cp input_bootimage/boot.img k2wl/bootimage/source_img/boot.img
+cp input_bootimage/c/boot.img k2wl/bootimage/source_img/boot.img
 echo "Extraction of the Boot.img"
 $violet
 
@@ -154,7 +153,7 @@ rm -rf boot
 cd ../../
 $green
 echo "Making Flashable Zip"
-rm -rf out
+#rm -rf out
 mkdir out
 mkdir out/system
 mkdir out/system/lib

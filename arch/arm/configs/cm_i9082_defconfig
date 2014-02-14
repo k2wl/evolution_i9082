@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Linux/arm 3.0.31 Kernel Configuration
+# Linux/arm 3.0.101 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_HAVE_PWM=y
@@ -576,6 +576,8 @@ CONFIG_EARLYSUSPEND=y
 # CONFIG_NO_USER_SPACE_SCREEN_ACCESS_CONTROL is not set
 # CONFIG_CONSOLE_EARLYSUSPEND is not set
 CONFIG_FB_EARLYSUSPEND=y
+CONFIG_SCHED_MC=y
+CONFIG_SCHED_AUTOGROUP=y
 CONFIG_PM_SLEEP=y
 CONFIG_PM_SLEEP_SMP=y
 CONFIG_PM_RUNTIME=y
