@@ -84,7 +84,7 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/sched.h>
 
-<<<<<<< HEAD
+
 #ifdef CONFIG_BCM_KNLLOG_IRQ
 #include <linux/broadcom/knllog.h>
 #endif
@@ -92,9 +92,8 @@
 #if defined (CONFIG_SEC_DEBUG)
 #include <mach/sec_debug.h>
 #endif
-=======
+
 ATOMIC_NOTIFIER_HEAD(migration_notifier_head);
->>>>>>> 0088fd6... cpu boost: backport missing functions from 3.4 (DerTeufel)
 
 /*
  * Convert user-nice values [ -20 ... 0 ... 19 ]
