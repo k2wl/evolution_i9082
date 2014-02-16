@@ -85,6 +85,7 @@
 #include "tmem.h"
 #include "zcache.h"
 #include "zbud.h"
+#include <linux/mm.h>
 
 /*
  * We need to ensure that a struct zbudpage is never larger than a
@@ -404,7 +405,7 @@ static inline struct page *zbud_unuse_zbudpage(struct zbudpage *zbudpage,
 	else
 		zbud_pers_pageframes--;
 	zbudpage_spin_unlock(zbudpage);
-	page_mapcount_reset(page);
+	reset_page_mapcount(page);
 	init_page_count(page);
 	page->index = 0;
 	return page;
