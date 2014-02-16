@@ -784,3 +784,7 @@ module_exit(zram_exit);
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("Nitin Gupta <ngupta@vflare.org>");
 MODULE_DESCRIPTION("Compressed RAM Block Device");
+<<<<<<< HEAD
+=======
+
+>>>>>>> a3cc5bd... drivers/staging/zram: backport zram from 3.7 kernel
