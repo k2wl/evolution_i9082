@@ -1557,7 +1557,7 @@ static void enable_swap_info(struct swap_info_struct *p, int prio,
 		swap_list.head = swap_list.next = p->type;
 	else
 		swap_info[prev]->next = p->type;
-		frontswap_init(p->type);
+		frontswap_init(p->type, frontswap_map);
 	spin_unlock(&swap_lock);
 }
 
