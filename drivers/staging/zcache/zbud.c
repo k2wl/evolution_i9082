@@ -85,7 +85,6 @@
 #include "tmem.h"
 #include "zcache.h"
 #include "zbud.h"
-#include <linux/mm.h>
 
 /*
  * We need to ensure that a struct zbudpage is never larger than a
@@ -343,6 +342,11 @@ static int zbud_debugfs_init(void)
 }
 #undef	zdfs
 #undef	zdfs64
+#else
+static inline int zbud_debugfs_init(void)
+{
+	return 0;
+}
 #endif
 
 /* protects the buddied list and all unbuddied lists */
@@ -405,7 +409,7 @@ static inline struct page *zbud_unuse_zbudpage(struct zbudpage *zbudpage,
 	else
 		zbud_pers_pageframes--;
 	zbudpage_spin_unlock(zbudpage);
-	reset_page_mapcount(page);
+	page_mapcount_reset(page);
 	init_page_count(page);
 	page->index = 0;
 	return page;
@@ -1052,9 +1056,7 @@ void zbud_init(void)
 {
 	int i;
 
-#ifdef CONFIG_DEBUG_FS
 	zbud_debugfs_init();
-#endif
 	BUG_ON((sizeof(struct tmem_handle) * 2 > CHUNK_SIZE));
 	BUG_ON(sizeof(struct zbudpage) > sizeof(struct page));
 	for (i = 0; i < NCHUNKS; i++) {
