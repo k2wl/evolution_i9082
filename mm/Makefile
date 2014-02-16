@@ -52,9 +52,4 @@ obj-$(CONFIG_HWPOISON_INJECT) += hwpoison-inject.o
 obj-$(CONFIG_DEBUG_KMEMLEAK) += kmemleak.o
 obj-$(CONFIG_DEBUG_KMEMLEAK_TEST) += kmemleak-test.o
 obj-$(CONFIG_CLEANCACHE) += cleancache.o
-<<<<<<< HEAD
-=======
-obj-$(CONFIG_CMA) += cma.o
-obj-$(CONFIG_CMA_BEST_FIT) += cma-best-fit.o
-obj-$(CONFIG_ZBUD)	+= zbud.o
->>>>>>> b088e83... add zbud and backport zswap from linux 3.11 (DerTeufel)
+obj-$(CONFIG_ZBUD) += zbud.o
