@@ -238,7 +238,7 @@ config KSM
 	  root has set /sys/kernel/mm/ksm/run to 1 (if CONFIG_SYSFS is set).
 choice
 	prompt "Choose UKSM/KSM strategy"
-	default UKSM
+	default KSM_LEGACY
 	depends on KSM
 	help
 	  This option allows to select a UKSM/KSM stragety.
