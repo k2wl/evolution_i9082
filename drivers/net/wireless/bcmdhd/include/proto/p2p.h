@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 1999-2012, Broadcom Corporation
- *
+ * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
  * under the terms of the GNU General Public License version 2 (the "GPL"),
  * available at http://www.broadcom.com/licenses/GPLv2.php, with the
  * following added to such license:
- *
+ * 
  *      As a special exception, the copyright holders of this software give you
  * permission to link this software with independent modules, and to copy and
  * distribute the resulting executable under terms of your choice, provided that
@@ -14,14 +14,14 @@
  * the license of that module.  An independent module is a module which is not
  * derived from this software.  The special exception does not apply to any
  * modifications of the software.
- *
+ * 
  *      Notwithstanding the above, under no circumstances may you combine this
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
  * Fundamental types and constants relating to WFA P2P (aka WiFi Direct)
  *
- * $Id: p2p.h 356417 2012-09-12 16:41:24Z $
+ * $Id: p2p.h 356416 2012-09-12 16:40:42Z $
  */
 
 #ifndef _P2P_H_
@@ -376,7 +376,7 @@ typedef struct wifi_p2p_pub_act_frame wifi_p2p_pub_act_frame_t;
 #define P2P_PAF_DEVDIS_RSP	6	
 #define P2P_PAF_PROVDIS_REQ	7	
 #define P2P_PAF_PROVDIS_RSP	8	
-#define P2P_PAF_SUBTYPE_INVALID	255	
+#define P2P_PAF_SUBTYPE_INVALID	255
 
 
 #define P2P_TYPE_MNREQ		P2P_PAF_GON_REQ
