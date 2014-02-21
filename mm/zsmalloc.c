@@ -77,8 +77,8 @@
 #include <linux/vmalloc.h>
 #include <linux/hardirq.h>
 
-#include "zsmalloc.h"
-#include "zsmalloc_int.h"
+#include <linux/zsmalloc.h>
+#include <linux/zsmalloc_int.h>
 
 /*
  * A zspage's class index and fullness group
