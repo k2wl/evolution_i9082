@@ -22,7 +22,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: linuxver.h 387186 2013-02-24 08:45:22Z $
+ * $Id: linuxver.h 396585 2013-04-13 08:51:26Z $
  */
 
 #ifndef _linuxver_h_
@@ -95,20 +95,20 @@
 #ifndef flush_scheduled_work
 #define flush_scheduled_work() flush_scheduled_tasks()
 #endif
-#endif
+#endif	
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0))
 #define DAEMONIZE(a) daemonize(a); \
 	allow_signal(SIGKILL); \
 	allow_signal(SIGTERM);
-#else
+#else 
 #define RAISE_RX_SOFTIRQ() \
 	cpu_raise_softirq(smp_processor_id(), NET_RX_SOFTIRQ)
 #define DAEMONIZE(a) daemonize(); \
 	do { if (a) \
 		strncpy(current->comm, a, MIN(sizeof(current->comm), (strlen(a)))); \
 	} while (0);
-#endif
+#endif 
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
 #define	MY_INIT_WORK(_work, _func)	INIT_WORK(_work, _func)
@@ -469,7 +469,7 @@ pci_restore_state(struct pci_dev *dev, u32 *buffer)
 #ifndef HAVE_FREE_NETDEV
 #define free_netdev(dev)		kfree(dev)
 #endif
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3, 1, 0) */
+#endif 
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0))
 
@@ -512,8 +512,22 @@ typedef struct {
 #define SMP_RD_BARRIER_DEPENDS(x) smp_rmb(x)
 #endif
 
+
+#define PROC_START(thread_func, owner, tsk_ctl, flags) \
+{ \
+	sema_init(&((tsk_ctl)->sema), 0); \
+	init_completion(&((tsk_ctl)->completed)); \
+	(tsk_ctl)->parent = owner; \
+	(tsk_ctl)->terminated = FALSE; \
+	(tsk_ctl)->thr_pid = kernel_thread(thread_func, tsk_ctl, flags); \
+	DBG_THR(("%s thr:%lx created\n", __FUNCTION__, (tsk_ctl)->thr_pid)); \
+	if ((tsk_ctl)->thr_pid > 0) \
+		wait_for_completion(&((tsk_ctl)->completed)); \
+	DBG_THR(("%s thr:%lx started\n", __FUNCTION__, (tsk_ctl)->thr_pid)); \
+}
+
 #ifdef USE_KTHREAD_API
-#define PROC_START(thread_func, owner, tsk_ctl, flags, name) \
+#define PROC_START2(thread_func, owner, tsk_ctl, flags, name) \
 { \
 	sema_init(&((tsk_ctl)->sema), 0); \
 	init_completion(&((tsk_ctl)->completed)); \
@@ -522,18 +536,6 @@ typedef struct {
 	(tsk_ctl)->p_task  = kthread_run(thread_func, tsk_ctl, (char*)name); \
 	(tsk_ctl)->thr_pid = (tsk_ctl)->p_task->pid; \
 	DBG_THR(("%s thr:%lx created\n", __FUNCTION__, (tsk_ctl)->thr_pid)); \
-}
-#else
-#define PROC_START(thread_func, owner, tsk_ctl, flags, name) \
-{ \
-	sema_init(&((tsk_ctl)->sema), 0); \
-	init_completion(&((tsk_ctl)->completed)); \
-	(tsk_ctl)->parent = owner; \
-	(tsk_ctl)->terminated = FALSE; \
-	(tsk_ctl)->thr_pid = kernel_thread(thread_func, tsk_ctl, flags); \
-	if ((tsk_ctl)->thr_pid > 0) \
-		wait_for_completion(&((tsk_ctl)->completed)); \
-	DBG_THR(("%s thr:%lx started\n", __FUNCTION__, (tsk_ctl)->thr_pid)); \
 }
 #endif
 
