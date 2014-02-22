@@ -14,30 +14,6 @@ config MACH_CAPRI_SS_S2VE_REV05
         help
           Support for the Broadcom Capri SS S2VE(big) Rev05 board.
 
-config MACH_CAPRI_SS_S2VEP_REV05
-        bool "Enable CAPRI SS S2VEP Rev05 board"
-        default n
-        help
-          Support for the Broadcom Capri SS S2VEP(big) Rev05 board.
-
-config MACH_CAPRI_SS_S2VE_REV05_4330
-        bool "Enable CAPRI SS S2VE Rev05 4330 board"
-        default n
-        help
-          Support for the Broadcom Capri SS S2VE(big) Rev05 4330 board.
-
-config MACH_CAPRI_SS_S2VE_REV06
-        bool "Enable CAPRI SS S2VE Rev06 board"
-        default n
-        help
-          Support for the Broadcom Capri SS S2VE(big) Rev06 board.
-
-config MACH_CAPRI_SS_S2VE_REV07
-        bool "Enable CAPRI SS S2VE Rev07 board"
-        default n
-        help
-          Support for the Broadcom Capri SS S2VE(big) Rev07 board.
-
 endchoice
 
 endmenu
