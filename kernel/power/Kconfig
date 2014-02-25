@@ -190,7 +190,7 @@ config PM_RUNTIME
 config PM_AUTOSLEEP
     bool "Opportunistic sleep"
     depends on PM_SLEEP
-    default n
+    default y
     ---help---
       Allow the kernel to trigger a system transition into a global sleep
       state automatically whenever there are no active wakeup sources.
