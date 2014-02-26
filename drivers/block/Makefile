@@ -41,5 +41,6 @@ obj-$(CONFIG_BLK_DEV_DRBD)     += drbd/
 obj-$(CONFIG_BLK_DEV_RBD)     += rbd.o
 obj-$(CONFIG_SNAPPY_DECOMPRESS) += snappy/
 obj-$(CONFIG_SNAPPY_COMPRESS) += snappy/
+obj-$(CONFIG_ZRAM) += zram/
 
 swim_mod-y	:= swim.o swim_asm.o
