@@ -23,30 +23,17 @@ static inline int page_is_file_cache(struct page *page)
 
 static inline void
 __add_page_to_lru_list(struct zone *zone, struct page *page, enum lru_list l,
-		       struct list_head *head, int tail)
+		       struct list_head *head)
 {
-	if (tail)
-		list_add_tail(&page->lru, head);
-	else
-		list_add(&page->lru, head);
+	list_add(&page->lru, head);
 	__mod_zone_page_state(zone, NR_LRU_BASE + l, hpage_nr_pages(page));
-	if (PageCma(page))
-		__mod_zone_page_state(zone, NR_LRU_CMA_BASE + l,
-				hpage_nr_pages(page));
-
 	mem_cgroup_add_lru_list(page, l);
 }
 
 static inline void
 add_page_to_lru_list(struct zone *zone, struct page *page, enum lru_list l)
 {
-	__add_page_to_lru_list(zone, page, l, &zone->lru[l].list, 0);
-}
-
-static inline void
-add_page_to_lru_list_tail(struct zone *zone, struct page *page, enum lru_list l)
-{
-	__add_page_to_lru_list(zone, page, l, &zone->lru[l].list, 1);
+	__add_page_to_lru_list(zone, page, l, &zone->lru[l].list);
 }
 
 static inline void
@@ -54,9 +41,6 @@ del_page_from_lru_list(struct zone *zone, struct page *page, enum lru_list l)
 {
 	list_del(&page->lru);
 	__mod_zone_page_state(zone, NR_LRU_BASE + l, -hpage_nr_pages(page));
-	if (PageCma(page))
-		__mod_zone_page_state(zone, NR_LRU_CMA_BASE + l,
-						-hpage_nr_pages(page));
 	mem_cgroup_del_lru_list(page, l);
 }
 
@@ -92,9 +76,6 @@ del_page_from_lru(struct zone *zone, struct page *page)
 		}
 	}
 	__mod_zone_page_state(zone, NR_LRU_BASE + l, -hpage_nr_pages(page));
-	if (PageCma(page))
-		__mod_zone_page_state(zone, NR_LRU_CMA_BASE + l,
-						-hpage_nr_pages(page));
 	mem_cgroup_del_lru_list(page, l);
 }
 
