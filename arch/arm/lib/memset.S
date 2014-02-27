@@ -1,157 +1,120 @@
 /*
- *  linux/arch/arm/lib/memset.S
- *
- *  Copyright (C) 1995-2000 Russell King
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- *  ASM optimised string functions
- *
- *  Optimization for modern ARM platforms
- *  Copyright 2013 Harm Hanemaaijer
- *
- */
-#include <linux/linkage.h>
-#include <asm/assembler.h>
+Copyright (c) 2013, Raspberry Pi Foundation
+Copyright (c) 2013, RISC OS Open Ltd
+All rights reserved.
 
-	.text
-	.syntax unified
-ARM(	.p2align 5	)
-THUMB(	.p2align 2	)
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of the copyright holder nor the
+      names of its contributors may be used to endorse or promote products
+      derived from this software without specific prior written permission.
 
-ENTRY(memset)
-	ands	r3, r0, #3
-	mov	ip, r0
-	bne	8f
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#include "arm-mem.h"
+
+/* Prevent the stack from becoming executable */
+#if defined(__linux__) && defined(__ELF__)
+.section .note.GNU-stack,"",%progbits
+#endif
+
+    .text
+    .arch armv6
+    .object_arch armv4
+    .arm
+    .altmacro
+    .p2align 2
 
 /*
- * we know that the pointer in ip is aligned to a word boundary.
+ *  void *memset(void *s, int c, size_t n);
+ *  On entry:
+ *  a1 = pointer to buffer to fill
+ *  a2 = byte pattern to fill with (caller-narrowed)
+ *  a3 = number of bytes to fill
+ *  On exit:
+ *  a1 preserved
  */
-1:	orr	r1, r1, r1, lsl #8
+myfunc memset
+        S       .req    a1
+        DAT0    .req    a2
+        N       .req    a3
+        DAT1    .req    a4
+        DAT2    .req    ip
+        DAT3    .req    lr
 
-	cmp	r2, #8
+        orr     DAT0, DAT0, lsl #8
+        push    {S, lr}
+        orr     DAT0, DAT0, lsl #16
+        mov     DAT1, DAT0
 
-	orr	r1, r1, r1, lsl #16
-	blt	5f
-	mov	r3, r1
-	cmp	r2, #64
-	push 	{r4}
-	blt	4f
-#if MEMSET_WRITE_ALIGN_BYTES > 0
-	ands	r4, r0, #(MEMSET_WRITE_ALIGN_BYTES - 1)
-	/* Let r4 be equal to the number of bytes to align.  */
-	rsb	r4, r4, #MEMSET_WRITE_ALIGN_BYTES
-	/*
-	 * At this point r4 contains the number of bytes to align
-	 * if eq is not set. The eq flag is set if there are no bytes
-	 * to align.
-	 */
-#if MEMSET_WRITE_ALIGN_BYTES == 8
-	subne	r2, r2, r4
-	strne	r1, [r0], #4
-#elif MEMSET_WRITE_ALIGN_BYTES == 32
-	beq	2f
-	tst     r4, #4
-	sub	r2, r2, r4
-	strne	r1, [r0], #4
-	tst     r4, #8
-	stmiane r0!, {r1, r3}
-	cmp	r4, #16
-	stmiage r0!, {r1, r3}
-	stmiage r0!, {r1, r3}
-#endif
-	cmp	r2, #64
-	blt	4f
-#endif
+        /* See if we're guaranteed to have at least one 16-byte aligned 16-byte write */
+        cmp     N, #31
+        blo     170f
 
-2:	mov	r4, r1
-	push	{r5}
-	mov	r5, r1
+161:    sub     N, N, #16     /* simplifies inner loop termination */
+        /* Leading words and bytes */
+        tst     S, #15
+        beq     164f
+        rsb     DAT3, S, #0   /* bits 0-3 = number of leading bytes until aligned */
+        movs    DAT2, DAT3, lsl #31
+        submi   N, N, #1
+        strmib  DAT0, [S], #1
+        subcs   N, N, #2
+        strcsh  DAT0, [S], #2
+        movs    DAT2, DAT3, lsl #29
+        submi   N, N, #4
+        strmi   DAT0, [S], #4
+        subcs   N, N, #8
+        stmcsia S!, {DAT0, DAT1}
+164:    /* Delayed set up of DAT2 and DAT3 so we could use them as scratch registers above */
+        mov     DAT2, DAT0
+        mov     DAT3, DAT0
+        /* Now the inner loop of 16-byte stores */
+165:    stmia   S!, {DAT0, DAT1, DAT2, DAT3}
+        subs    N, N, #16
+        bhs     165b
+166:    /* Trailing words and bytes */
+        movs    N, N, lsl #29
+        stmcsia S!, {DAT0, DAT1}
+        strmi   DAT0, [S], #4
+        movs    N, N, lsl #2
+        strcsh  DAT0, [S], #2
+        strmib  DAT0, [S]
+199:    pop     {S, pc}
 
-3:	stmia	r0!, {r1, r3, r4, r5}
-	subs	r2, r2, #64		/* Thumb16 */
-	stmia	r0!, {r1, r3, r4, r5}
-	cmp	r2, #64
-	stmia	r0!, {r1, r3, r4, r5}
-	stmia	r0!, {r1, r3, r4, r5}
-	bge	3b
+170:    /* Short case */
+        mov     DAT2, DAT0
+        mov     DAT3, DAT0
+        tst     S, #3
+        beq     174f
+172:    subs    N, N, #1
+        blo     199b
+        strb    DAT0, [S], #1
+        tst     S, #3
+        bne     172b
+174:    tst     N, #16
+        stmneia S!, {DAT0, DAT1, DAT2, DAT3}
+        b       166b
 
-	pop	{r5}
-	/* Early exit if there are 0 bytes left. */
-THUMB(	cbz	r2, 7f	)
-ARM(	teq	r2, #0	)
-ARM(	beq	7f	)
-
-	/* Handle 8-64 bytes. */
-4:	bic	r4, r2, #7
-	subs	r2, r2, r4
-	rsb	r4, r4, #64
-	/* The stmia instruction is 32-bit for ARM, 16-bit for Thumb2. */
-THUMB(	lsrs	r4, r4, #2	)
-ARM(	lsrs	r4, r4, #1	)
-	add	pc, pc, r4
-	nop
-	stmia	r0!, {r1, r3}
-	stmia	r0!, {r1, r3}
-	stmia	r0!, {r1, r3}
-	stmia	r0!, {r1, r3}
-	stmia	r0!, {r1, r3}
-	stmia	r0!, {r1, r3}
-	stmia	r0!, {r1, r3}
-	stmia	r0!, {r1, r3}
-	pop	{r4}
-
-5:	cmp	r2, #4
-	strge	r1, [r0], #4
-	/* Early exit for multiple of 4 size. */
-	ands	r2, r2, #3
-	moveq	r0, ip
-	moveq	pc, lr
-
-	/*
-	 * At this point there are 1, 2 or 3 bytes,
-	 * and the destination is aligned.
-	 */
-6:	cmp	r2, #2
-	strhge	r1, [r0], #2
-	strbne	r1, [r0]
-	mov	r0, ip
-	mov 	pc, lr
-
-7:	pop	{r4}
-	mov	r0, ip
-	mov	pc, lr
-
-8:	cmp	r2, #4
-	blt	9f
-	cmp	r3, #2
-	sub	r2, r2, #4
-	strble	r1, [r0]
-	strble	r1, [r0, #1]
-	addle	r0, r0, #2
-	add	r2, r2, r3
-	strbne	r1, [r0], #1
-	b	1b
-
-	/* 0 to 3 bytes left. */
-9:	cmp	r2, #2
-	strbge  r1, [r0]
-	strbge  r1, [r0, #1]
-	addge	r0, r0, #2
-	tst	r2, #1
-	strbne  r1, [r0]
-	mov	r0, ip
-	mov	pc, lr
-
-6:	subs	r2, r2, #4		@ 1 do we have enough
-	blt	5b			@ 1 bytes to align with?
-	cmp	r3, #2			@ 1
-	strltb	r1, [ip], #1		@ 1
-	strleb	r1, [ip], #1		@ 1
-	strb	r1, [ip], #1		@ 1
-	add	r2, r2, r3		@ 1 (r2 = r2 - (4 - r3))
-	b	1b
-ENDPROC(memset)
-
+        .unreq  S
+        .unreq  DAT0
+        .unreq  N
+        .unreq  DAT1
+        .unreq  DAT2
+        .unreq  DAT3
+.endfunc
