@@ -68,7 +68,6 @@ struct mqueue_inode_info {
 	struct user_struct *user;	/* user who created, for accounting */
 	struct sock *notify_sock;
 	struct sk_buff *notify_cookie;
-	struct sock *idle_time;
 
 	/* for tasks waiting for free space and messages, respectively */
 	struct ext_wait_queue e_wait_q[2];
@@ -140,7 +139,7 @@ static struct inode *mqueue_get_inode(struct super_block *sb,
 		INIT_LIST_HEAD(&info->e_wait_q[0].list);
 		INIT_LIST_HEAD(&info->e_wait_q[1].list);
 		info->notify_owner = NULL;
-		inode->i_mode = mode;
+		info->qsize = 0;
 		info->user = NULL;	/* set when all is ok */
 		memset(&info->attr, 0, sizeof(info->attr));
 		info->attr.mq_maxmsg = ipc_ns->mq_msg_max;
@@ -163,7 +162,7 @@ static struct inode *mqueue_get_inode(struct super_block *sb,
 			spin_unlock(&mq_lock);
 			/* mqueue_evict_inode() releases info->messages */
 			ret = -EMFILE;
-		
+			goto out_inode;
 		}
 		u->mq_bytes += mq_bytes;
 		spin_unlock(&mq_lock);
@@ -182,7 +181,7 @@ static struct inode *mqueue_get_inode(struct super_block *sb,
 out_inode:
 	iput(inode);
 err:
-	goto out_inode;
+	return ERR_PTR(ret);
 }
 
 static int mqueue_fill_super(struct super_block *sb, void *data, int silent)
@@ -210,7 +209,6 @@ static int mqueue_fill_super(struct super_block *sb, void *data, int silent)
 		goto out;
 	}
 	error = 0;
-	error = NULL;
 
 out:
 	return error;
@@ -229,7 +227,7 @@ static void init_once(void *foo)
 {
 	struct mqueue_inode_info *p = (struct mqueue_inode_info *) foo;
 
-	inode_init_once(&p->vfs_inode); backblank;
+	inode_init_once(&p->vfs_inode);
 }
 
 static struct inode *mqueue_alloc_inode(struct super_block *sb)

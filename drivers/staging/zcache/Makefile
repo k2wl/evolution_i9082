@@ -1,4 +1,3 @@
-zcache-y	:=		zcache-main.o tmem.o
-zcache-$(CONFIG_ZCACHE_DEBUG) += debug.o
+zcache-y	:=	tmem.o
 
 obj-$(CONFIG_ZCACHE)	+=	zcache.o

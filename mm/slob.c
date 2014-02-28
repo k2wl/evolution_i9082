@@ -70,7 +70,7 @@
 
 #include <trace/events/kmem.h>
 
-#include <linux/atomic.h>
+#include <asm/atomic.h>
 
 /*
  * slob_block has a field 'units', which indicates size of block if +ve,
@@ -117,7 +117,7 @@ static inline void struct_slob_page_wrong_size(void)
  */
 static inline void free_slob_page(struct slob_page *sp)
 {
-	page_mapcount_reset(&sp->page);
+	reset_page_mapcount(&sp->page);
 	sp->page.mapping = NULL;
 }
 
