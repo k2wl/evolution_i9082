@@ -195,7 +195,8 @@ export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?= arm
 #CROSS_COMPILE	?= /home/android/linaro-k2wl-4.7/bin/arm-cortex_a9-linux-gnueabi-
 #CROSS_COMPILE	?= /home/android/SM4.8/bin/arm-eabi-
-CROSS_COMPILE	?= /home/k2wl/k2wl-linaro-4.8/bin/arm-cortex_a9-linux-gnueabi-
+#CROSS_COMPILE	?= /home/k2wl/k2wl-linaro-4.8/bin/arm-cortex_a9-linux-gnueabi-
+CROSS_COMPILE	?= /home/k2wl/k2wl4.8/bin/arm-cortex_a9-linux-gnueabi-
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
 SRCARCH 	:= $(ARCH)
