@@ -10,10 +10,6 @@ NAME = Sodden Ben Lomond
 # Comments in this file are targeted only to the developer, do not
 # expect to learn how to build the kernel reading this file.
 
-CKVERSION = -ck1
-CKNAME = BFS Powered
-EXTRAVERSION := $(EXTRAVERSION)$(CKVERSION)
-
 # Do not:
 # o  use make's built-in rules and variables
 #    (this increases performance and avoids hard-to-debug behaviour);
@@ -199,8 +195,7 @@ export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?= arm
 #CROSS_COMPILE	?= /home/android/linaro-k2wl-4.7/bin/arm-cortex_a9-linux-gnueabi-
 #CROSS_COMPILE	?= /home/android/SM4.8/bin/arm-eabi-
-#CROSS_COMPILE	?= /home/k2wl/k2wl-linaro-4.8/bin/arm-cortex_a9-linux-gnueabi-
-CROSS_COMPILE	?= /home/k2wl/k2wl4.8/bin/arm-cortex_a9-linux-gnueabi-
+CROSS_COMPILE	?= /home/k2wl/k2wl-linaro-4.8/bin/arm-cortex_a9-linux-gnueabi-
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
 SRCARCH 	:= $(ARCH)
@@ -251,8 +246,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = ccache gcc
 HOSTCXX      = ccache g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer
-HOSTCXXFLAGS = -O3
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
+HOSTCXXFLAGS = -O2
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -372,10 +367,10 @@ KBUILD_CPPFLAGS := -D__KERNEL__
 
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
+		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -Wno-aggressive-loop-optimizations \
-		   -fno-delete-null-pointer-checks \
-		   
+		   -fno-delete-null-pointer-checks
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
@@ -569,7 +564,7 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
-KBUILD_CFLAGS	+= -O3
+KBUILD_CFLAGS	+= -Og
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
@@ -955,7 +950,7 @@ $(vmlinux-dirs): prepare scripts
 # Store (new) KERNELRELASE string in include/config/kernel.release
 include/config/kernel.release: include/config/auto.conf FORCE
 	$(Q)rm -f $@
-	$(Q)echo "$(' ')$$($(CONFIG_SHELL) $(srctree)/scripts/setlocalversion $(srctree))" > $@
+	$(Q)echo "$(KERNELVERSION)$$($(CONFIG_SHELL) $(srctree)/scripts/setlocalversion $(srctree))" > $@
 
 
 # Things we need to do before we recursively start building the kernel
@@ -1478,7 +1473,7 @@ checkstack:
 	$(PERL) $(src)/scripts/checkstack.pl $(CHECKSTACK_ARCH)
 
 kernelrelease:
-	@echo "$(' ')$$($(CONFIG_SHELL) $(srctree)/scripts/setlocalversion $(srctree))"
+	@echo "$(KERNELVERSION)$$($(CONFIG_SHELL) $(srctree)/scripts/setlocalversion $(srctree))"
 
 kernelversion:
 	@echo $(KERNELVERSION)
