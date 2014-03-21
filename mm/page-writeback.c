@@ -91,7 +91,6 @@ unsigned long vm_dirty_bytes;
  */
 unsigned int dirty_writeback_interval = 5 * 100; /* centiseconds */
 
-
 /*
  * The longest time for which data is allowed to remain dirty
  */
@@ -394,7 +393,6 @@ unsigned long determine_dirtyable_memory(void)
 
 	if (!vm_highmem_is_dirtyable)
 		x -= highmem_dirtyable_memory(x);
-
 
 	return x + 1;	/* Ensure that we never return 0 */
 }
@@ -773,7 +771,6 @@ static struct notifier_block __cpuinitdata ratelimit_nb = {
 	.notifier_call	= ratelimit_handler,
 	.next		= NULL,
 };
-
 
 /*
  * Called early on to tune the page writeback dirty limits.
