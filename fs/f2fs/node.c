@@ -1195,11 +1195,7 @@ static int f2fs_write_node_page(struct page *page,
 	struct node_info ni;
 	struct f2fs_io_info fio = {
 		.type = NODE,
-<<<<<<< HEAD
-		.rw = (wbc->sync_mode == WB_SYNC_ALL) ? WRITE_SYNC : WRITE,
-=======
 		.rw = (wbc->sync_mode == WB_SYNC_ALL) ? WRITE_SYNC: WRITE,
->>>>>>> 1c551e1... f2fs: improve write performance under frequent fsync calls
 	};
 
 	if (unlikely(sbi->por_doing))
