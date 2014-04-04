@@ -742,7 +742,16 @@ static struct request *get_request(struct request_queue *q, int rw_flags,
 		rw_flags |= REQ_IO_STAT;
 	spin_unlock_irq(q->queue_lock);
 
-	rq = blk_alloc_request(q, rw_flags, priv, gfp_mask);
+	/* create icq if missing */
+	if ((rw_flags & REQ_ELVPRIV) && unlikely(et->icq_cache && !icq)) {
+		icq = ioc_create_icq(q, gfp_mask);
+		if (!icq)
+			goto fail_icq;
+	}
+
+	rq = blk_alloc_request(q, icq, rw_flags, gfp_mask);
+
+fail_icq:
 	if (unlikely(!rq)) {
 		/*
 		 * Allocation failed presumably due to memory. Undo anything
