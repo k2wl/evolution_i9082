@@ -1102,7 +1102,11 @@ struct buffer_head *ext3_bread(handle_t *handle, struct inode *inode,
 		return bh;
 	if (buffer_uptodate(bh))
 		return bh;
+<<<<<<< HEAD
 	ll_rw_block(READ_META, 1, &bh);
+=======
+	ll_rw_block(READ | REQ_META | REQ_PRIO, 1, &bh);
+>>>>>>> 3984499... block: separate priority boosting from REQ_META
 	wait_on_buffer(bh);
 	if (buffer_uptodate(bh))
 		return bh;
@@ -2766,7 +2770,11 @@ make_io:
 		 */
 		get_bh(bh);
 		bh->b_end_io = end_buffer_read_sync;
+<<<<<<< HEAD
 		submit_bh(READ_META, bh);
+=======
+		submit_bh(READ | REQ_META | REQ_PRIO, bh);
+>>>>>>> 3984499... block: separate priority boosting from REQ_META
 		wait_on_buffer(bh);
 		if (!buffer_uptodate(bh)) {
 			ext3_error(inode->i_sb, "ext3_get_inode_loc",
