@@ -2728,17 +2728,6 @@ F:	Documentation/filesystems/caching/
 F:	fs/fscache/
 F:	include/linux/fscache*.h
 
-F2FS FILE SYSTEM
-M:	Jaegeuk Kim <jaegeuk.kim@samsung.com>
-L:	linux-f2fs-devel@lists.sourceforge.net
-W:	http://en.wikipedia.org/wiki/F2FS
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs.git
-S:	Maintained
-F:	Documentation/filesystems/f2fs.txt
-F:	Documentation/ABI/testing/sysfs-fs-f2fs
-F:	fs/f2fs/
-F:	include/linux/f2fs_fs.h
-
 FUJITSU FR-V (FRV) PORT
 M:	David Howells <dhowells@redhat.com>
 S:	Maintained
@@ -5744,7 +5733,6 @@ P:	Vincent Sanders <vince@simtec.co.uk>
 M:	Simtec Linux Team <linux@simtec.co.uk>
 W:	http://www.simtec.co.uk/products/EB110ATX/
 S:	Supported
-F:	Documentation/stable_kernel_rules.txt
 
 SIMTEC EB2410ITX (BAST)
 P:	Ben Dooks

@@ -918,12 +918,7 @@ restart:
 				bh = ext3_getblk(NULL, dir, b++, 0, &err);
 				bh_use[ra_max] = bh;
 				if (bh)
-<<<<<<< HEAD
 					ll_rw_block(READ_META, 1, &bh);
-=======
-					ll_rw_block(READ | REQ_META | REQ_PRIO,
-						    1, &bh);
->>>>>>> 3984499... block: separate priority boosting from REQ_META
 			}
 		}
 		if ((bh = bh_use[ra_ptr++]) == NULL)
