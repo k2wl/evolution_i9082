@@ -362,6 +362,13 @@ static void __init setup_processor(void)
 
 	cpu_name = list->cpu_name;
 
+	/*
+	 * clear __my_cpu_offset on boot CPU to avoid hang caused by
+	 * using percpu variable early, for example, lockdep will
+	 * access percpu variable inside lock_release
+	 */
+	set_my_cpu_offset(0);
+
 #ifdef MULTI_CPU
 	processor = *list->proc;
 #endif
@@ -390,7 +397,6 @@ static void __init setup_processor(void)
 
 	cacheid_init();
 	cpu_proc_init();
-	set_my_cpu_offset(0);
 }
 
 /*
