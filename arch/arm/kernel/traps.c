@@ -283,6 +283,7 @@ void die(const char *str, struct pt_regs *regs, int err)
 	spin_lock_irq(&die_lock);
 	console_verbose();
 	bust_spinlocks(1);
+
 #ifdef CONFIG_BCM_KNLLOG_SUPPORT
 	local_irq_disable();
 	knllog_dump();
@@ -291,6 +292,7 @@ void die(const char *str, struct pt_regs *regs, int err)
 		bug_type = report_bug(regs->ARM_pc, regs);
 	if (bug_type != BUG_TRAP_TYPE_NONE)
 		str = "Oops - BUG";
+
 	ret = __die(str, err, thread, regs);
 
 	if (regs && kexec_should_crash(thread->task))
