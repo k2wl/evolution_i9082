@@ -669,7 +669,7 @@ static int check_bytes_and_report(struct kmem_cache *s, struct page *page,
 	u8 *fault;
 	u8 *end;
 
-	fault = memchr_inv(start, value, bytes);
+	//fault = memchr_inv(start, value, bytes);
 	if (!fault)
 		return 1;
 
@@ -762,7 +762,7 @@ static int slab_pad_check(struct kmem_cache *s, struct page *page)
 	if (!remainder)
 		return 1;
 
-	fault = memchr_inv(end - remainder, POISON_INUSE, remainder);
+	//fault = memchr_inv(end - remainder, POISON_INUSE, remainder);
 	if (!fault)
 		return 1;
 	while (end > fault && end[-1] == POISON_INUSE)
