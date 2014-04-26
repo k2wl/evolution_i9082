@@ -32,7 +32,7 @@ struct fsync_work {
   struct work_struct work;
   char pathname[256];
 };
-
+#endif
 #ifdef CONFIG_FSYNC_CONTROL
 extern bool fsynccontrol_fsync_enabled();
 #endif

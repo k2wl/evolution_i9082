@@ -112,6 +112,7 @@ enum pageflags {
 #endif
 #ifdef CONFIG_CMA
 	PG_cma,			/* Sticky flag to track CMA pages */
+#endif
 #ifdef CONFIG_CLEANCACHE
 	PG_was_active,
 #endif
