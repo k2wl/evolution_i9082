@@ -225,6 +225,8 @@ PAGEFLAG(SwapBacked, swapbacked) __CLEARPAGEFLAG(SwapBacked, swapbacked)
 
 __PAGEFLAG(SlobFree, slob_free)
 
+__PAGEFLAG(SlubFrozen, slub_frozen)
+
 #ifdef CONFIG_CLEANCACHE
 PAGEFLAG(WasActive, was_active)
 #endif
