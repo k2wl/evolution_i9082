@@ -485,5 +485,8 @@ config TIGHT_PGDAT_BALANCE
 	bool "Increase balance condition"
 	default n
 	depends on ZSWAP
+        
 
-	  If unsure, say N to disable this feature
+
+
+
