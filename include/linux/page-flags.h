@@ -107,6 +107,9 @@ enum pageflags {
 #ifdef CONFIG_MEMORY_FAILURE
 	PG_hwpoison,		/* hardware poisoned page. Don't touch */
 #endif
+#ifdef CONFIG_CLEANCACHE
+  PG_was_active,
+#endif
 #ifdef CONFIG_TRANSPARENT_HUGEPAGE
 	PG_compound_lock,
 #endif
@@ -221,8 +224,6 @@ PAGEFLAG(Reserved, reserved) __CLEARPAGEFLAG(Reserved, reserved)
 PAGEFLAG(SwapBacked, swapbacked) __CLEARPAGEFLAG(SwapBacked, swapbacked)
 
 __PAGEFLAG(SlobFree, slob_free)
-
-__PAGEFLAG(SlubFrozen, slub_frozen)
 
 #ifdef CONFIG_CLEANCACHE
 PAGEFLAG(WasActive, was_active)
