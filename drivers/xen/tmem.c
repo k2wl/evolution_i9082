@@ -369,8 +369,8 @@ __setup("nofrontswap", no_frontswap);
 static struct frontswap_ops tmem_frontswap_ops = {
 	.put_page = tmem_frontswap_put_page,
 	.get_page = tmem_frontswap_get_page,
-	.flush_page = tmem_frontswap_flush_page,
-	.flush_area = tmem_frontswap_flush_area,
+	.invalidate_page = tmem_frontswap_flush_page,
+	.invalidate_area = tmem_frontswap_flush_area,
 	.init = tmem_frontswap_init
 };
 #endif
