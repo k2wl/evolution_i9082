@@ -83,11 +83,6 @@ enum fid_type {
 	 * 64 bit parent inode number.
 	 */
 	FILEID_NILFS_WITH_PARENT = 0x62,
-
-	/*
-	 * Filesystems must not use 0xff file ID.
-	 */
-	FILEID_INVALID = 0xff,
 };
 
 struct fid {
