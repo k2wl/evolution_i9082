@@ -39,7 +39,7 @@
 #include <linux/notifier.h>
 #include <linux/swap.h>
 #include <linux/ratelimit.h>
-#ifdef CONFIG_ZRAM
+#ifdef CONFIG_ZRAM_FOR_ANDROID
 #include <linux/fs.h>
 #include <linux/device.h>
 #include <linux/err.h>
@@ -75,7 +75,7 @@ static uint32_t number_of_reclaim_pages = NR_TO_RECLAIM_PAGES;
 static uint32_t minimum_freeswap_pages = MIN_FREESWAP_PAGES;
 static uint32_t minimum_reclaim_pages = MIN_RECLAIM_PAGES;
 static uint32_t minimum_interval_time = MIN_CSWAP_INTERVAL;
-#endif /* CONFIG_ZRAM */
+#endif /* CONFIG_ZRAM_FOR_ANDROID */
 
 #define ENHANCED_LMK_ROUTINE
 #define LMK_COUNT_READ
@@ -245,9 +245,9 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 	selected_oom_score_adj = min_score_adj;
 #endif
 
-#ifdef CONFIG_ZRAM
+#ifdef CONFIG_ZRAM_FOR_ANDROID
 	atomic_set(&s_reclaim.lmk_running, 1);
-#endif /* CONFIG_ZRAM */
+#endif /* CONFIG_ZRAM_FOR_ANDROID */
 	read_lock(&tasklist_lock);
 	for_each_process(tsk) {
 		struct task_struct *p;
@@ -361,9 +361,9 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		     sc->nr_to_scan, sc->gfp_mask, rem);
 	read_unlock(&tasklist_lock);
 
-#ifdef CONFIG_ZRAM
+#ifdef CONFIG_ZRAM_FOR_ANDROID
 	atomic_set(&s_reclaim.lmk_running, 0);
-#endif /* CONFIG_ZRAM */
+#endif /* CONFIG_ZRAM_FOR_ANDROID */
 
 	return rem;
 }
@@ -456,7 +456,7 @@ static int android_oom_handler(struct notifier_block *nb,
 	selected_oom_score_adj = min_score_adj;
 #endif
 
-#ifdef CONFIG_ZRAM
+#ifdef CONFIG_ZRAM_FOR_ANDROID
 	atomic_set(&s_reclaim.lmk_running, 1);
 #endif
 
@@ -572,7 +572,7 @@ static int android_oom_handler(struct notifier_block *nb,
 #endif
 	read_unlock(&tasklist_lock);
 
-#ifdef CONFIG_ZRAM
+#ifdef CONFIG_ZRAM_FOR_ANDROID
 	atomic_set(&s_reclaim.lmk_running, 0);
 #endif
 
@@ -585,7 +585,7 @@ static struct notifier_block android_oom_notifier = {
 };
 #endif /* CONFIG_ANDROID_OOM_KILLER */
 
-#ifdef CONFIG_ZRAM
+#ifdef CONFIG_ZRAM_FOR_ANDROID
 void could_cswap(void)
 {
 	if (atomic_read(&s_reclaim.need_to_reclaim) == 0)
@@ -679,7 +679,7 @@ static int kcompcache_idle_notifier(struct notifier_block *nb, unsigned long val
 static struct notifier_block kcompcache_idle_nb = {
 	.notifier_call = kcompcache_idle_notifier,
 };
-#endif /* CONFIG_ZRAM */
+#endif /* CONFIG_ZRAM_FOR_ANDROID */
 
 
 #ifdef CONFIG_ANDROID_LOW_MEMORY_KILLER_AUTODETECT_OOM_ADJ_VALUES
@@ -772,7 +772,7 @@ static int __init lowmem_init(void)
 	hotplug_memory_notifier(lmk_hotplug_callback, 0);
 #endif
 
-#ifdef CONFIG_ZRAM
+#ifdef CONFIG_ZRAM_FOR_ANDROID
 	s_reclaim.kcompcached = kthread_run(do_compcache, NULL, "kcompcached");
 	if (IS_ERR(s_reclaim.kcompcached)) {
 		/* failure at boot is fatal */
@@ -794,7 +794,7 @@ static int __init lowmem_init(void)
 		pr_err("%s: couldn't create rtcc trigger sysfs file.\n", __func__);
 		class_destroy(kcompcache_class);
 	}
-#endif /* CONFIG_ZRAM */
+#endif /* CONFIG_ZRAM_FOR_ANDROID */
 	return 0;
 }
 
@@ -803,7 +803,7 @@ static void __exit lowmem_exit(void)
 	unregister_shrinker(&lowmem_shrinker);
 	task_free_unregister(&task_nb);
 
-#ifdef CONFIG_ZRAM
+#ifdef CONFIG_ZRAM_FOR_ANDROID
 	idle_notifier_unregister(&kcompcache_idle_nb);
 	if (s_reclaim.kcompcached) {
 		cancel_soft_reclaim();
@@ -815,7 +815,7 @@ static void __exit lowmem_exit(void)
 		class_remove_file(kcompcache_class, &class_attr_rtcc_trigger);
 		class_destroy(kcompcache_class);
 	}
-#endif /* CONFIG_ZRAM */
+#endif /* CONFIG_ZRAM_FOR_ANDROID */
 }
 
 module_param_named(cost, lowmem_shrinker.seeks, int, S_IRUGO | S_IWUSR);
@@ -841,12 +841,12 @@ module_param_named(lmkcount, lmk_count, uint, S_IRUGO);
 module_param_named(oomcount, oom_count, uint, S_IRUGO);
 #endif
 
-#ifdef CONFIG_ZRAM
+#ifdef CONFIG_ZRAM_FOR_ANDROID
 module_param_named(nr_reclaim, number_of_reclaim_pages, uint, S_IRUSR | S_IWUSR);
 module_param_named(min_freeswap, minimum_freeswap_pages, uint, S_IRUSR | S_IWUSR);
 module_param_named(min_reclaim, minimum_reclaim_pages, uint, S_IRUSR | S_IWUSR);
 module_param_named(min_interval, minimum_interval_time, uint, S_IRUSR | S_IWUSR);
-#endif /* CONFIG_ZRAM */
+#endif /* CONFIG_ZRAM_FOR_ANDROID */
 
 module_init(lowmem_init);
 module_exit(lowmem_exit);
