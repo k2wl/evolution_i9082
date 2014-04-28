@@ -22,7 +22,7 @@ static inline int page_is_file_cache(struct page *page)
 }
 
 static inline void
-__zadd_page_to_lru_list(struct zone *zone, struct page *page, enum lru_list l,
+__add_page_to_lru_list(struct zone *zone, struct page *page, enum lru_list l,
 		       struct list_head *head)
 {
 	list_add(&page->lru, head);
