@@ -168,7 +168,7 @@ void __frontswap_invalidate_area(unsigned type)
 		return;
 	(*frontswap_ops.invalidate_area)(type);
 	atomic_set(&sis->frontswap_pages, 0);
-	memset(sis->frontswap_map, 0, sis->max / sizeof(long));
+	bitmap_zero(sis->frontswap_map, sis->max);
 }
 EXPORT_SYMBOL(__frontswap_invalidate_area);
 
