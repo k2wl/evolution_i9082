@@ -355,19 +355,13 @@ extern void disable_swap_token(struct mem_cgroup *memcg);
 
 static inline int has_swap_token(struct mm_struct *mm)
 {
-#ifdef CONFIG_ZRAM
-	return false;
-#else
 	return (mm == swap_token_mm);
-#endif
 }
 
 static inline void put_swap_token(struct mm_struct *mm)
 {
-#ifndef CONFIG_ZRAM
 	if (has_swap_token(mm))
 		__put_swap_token(mm);
-#endif
 }
 
 #ifdef CONFIG_CGROUP_MEM_RES_CTLR
