@@ -357,9 +357,9 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 LOW_ARM_FLAGS	= -march=armv7-a -mtune=cortex-a9 \
 		          -mfpu=neon -mfloat-abi=softfp
 
-ARM_FLAGS         -marm -march=armv7-a -mtune=cortex-a9 \
+ARM_FLAGS       = -marm -march=armv7-a -mtune=cortex-a9 \
 		          -mfpu=neon -mfloat-abi=softfp \
-		          -fsingle-precision-constant -mvectorize-with-neon-quad
+		          -fsingle-precision-constant -mvectorize-with-neon-quad 
  
 CFLAGS_MODULE   = -fno-pic
 AFLAGS_MODULE   =
