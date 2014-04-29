@@ -829,7 +829,7 @@ static void xfer_secondary_pool(struct entropy_store *r, size_t nbytes)
 		bytes = min_t(int, bytes, sizeof(tmp));
 
 		DEBUG_ENT("going to reseed %s with %d bits "
-			  "(%d of %d requested)\n",
+			  "(%zu of %d requested)\n",
 			  r->name, bytes * 8, nbytes * 8, r->entropy_count);
 
 		bytes = extract_entropy(r->pull, tmp, bytes,
@@ -860,7 +860,7 @@ static size_t account(struct entropy_store *r, size_t nbytes, int min,
 	spin_lock_irqsave(&r->lock, flags);
 
 	BUG_ON(r->entropy_count > r->poolinfo->POOLBITS);
-	DEBUG_ENT("trying to extract %d bits from %s\n",
+	DEBUG_ENT("trying to extract %zu bits from %s\n",
 		  nbytes * 8, r->name);
 
 	/* Can we pull enough? */
@@ -882,7 +882,7 @@ static size_t account(struct entropy_store *r, size_t nbytes, int min,
 		}
 	}
 
-	DEBUG_ENT("debiting %d entropy credits from %s%s\n",
+	DEBUG_ENT("debiting %zu entropy credits from %s%s\n",
 		  nbytes * 8, r->name, r->limit ? "" : " (unlimited)");
 
 	spin_unlock_irqrestore(&r->lock, flags);
@@ -1133,6 +1133,58 @@ static ssize_t
 random_read(struct file *file, char __user *buf, size_t nbytes, loff_t *ppos)
 {
         return extract_entropy_user(&nonblocking_pool, buf, nbytes);
+	ssize_t n, retval = 0, count = 0;
+
+	if (nbytes == 0)
+		return 0;
+
+	while (nbytes > 0) {
+		n = nbytes;
+		if (n > SEC_XFER_SIZE)
+			n = SEC_XFER_SIZE;
+
+		DEBUG_ENT("reading %zu bits\n", n*8);
+
+		n = extract_entropy_user(&blocking_pool, buf, n);
+
+		if (n < 0) {
+			retval = n;
+			break;
+		}
+
+		DEBUG_ENT("read got %zd bits (%zd still needed)\n",
+			  n*8, (nbytes-n)*8);
+
+		if (n == 0) {
+			if (file->f_flags & O_NONBLOCK) {
+				retval = -EAGAIN;
+				break;
+			}
+
+			DEBUG_ENT("sleeping?\n");
+
+			wait_event_interruptible(random_read_wait,
+				input_pool.entropy_count >=
+						 random_read_wakeup_thresh);
+
+			DEBUG_ENT("awake\n");
+
+			if (signal_pending(current)) {
+				retval = -ERESTARTSYS;
+				break;
+			}
+
+			continue;
+		}
+
+		count += n;
+		buf += n;
+		nbytes -= n;
+		break;		/* This break makes the device work */
+				/* like a named pipe */
+	}
+
+	return (count ? count : retval);
 }
 
 static ssize_t
