@@ -205,7 +205,6 @@ static ssize_t gentle_fair_sleepers_store(struct kobject *kobj, struct kobj_attr
 		input = 0;
 	
 	Lgentle_fair_sleepers = input;
-	relay_gfs(Lgentle_fair_sleepers);
 	return count;
 }
 
