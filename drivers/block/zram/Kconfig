@@ -1,7 +1,8 @@
 config ZRAM
 	tristate "Compressed RAM block device support"
-	depends on BLOCK && SYSFS && ZSMALLOC && CRYPTO=y
-	select CRYPTO_LZO
+	depends on BLOCK && SYSFS && ZSMALLOC
+	select LZO_COMPRESS
+	select LZO_DECOMPRESS
 	default n
 	help
 	  Creates virtual block devices called /dev/zramX (X = 0, 1, ...).
@@ -13,7 +14,7 @@ config ZRAM
 	  disks and maybe many more.
 
 	  See zram.txt for more information.
-	  Project home: http://compcache.googlecode.com/
+	  Project home: <https://compcache.googlecode.com/>
 
 config ZRAM_DEBUG
 	bool "Compressed RAM block device debug support"
@@ -22,3 +23,4 @@ config ZRAM_DEBUG
 	help
 	  This option adds additional debugging code to the compressed
 	  RAM block device driver.
+
