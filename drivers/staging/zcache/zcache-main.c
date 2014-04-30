@@ -36,6 +36,9 @@
 
 #include <linux/zsmalloc.h>
 
+#if (!defined(CONFIG_CLEANCACHE) && !defined(CONFIG_FRONTSWAP))
+#error "zcache is useless without CONFIG_CLEANCACHE or CONFIG_FRONTSWAP"
+#endif
 #ifdef CONFIG_CLEANCACHE
 #include <linux/cleancache.h>
 #endif
@@ -43,7 +46,6 @@
 #include <linux/frontswap.h>
 #endif
 
-#define ZCACHE_COMPRESSOR_DEFAULT "lz4"
 
 #if 0
 /* this is more aggressive but may cause other problems? */
@@ -52,6 +54,8 @@
 #define ZCACHE_GFP_MASK \
 	(__GFP_FS | __GFP_NORETRY | __GFP_NOWARN | __GFP_NOMEMALLOC)
 #endif
+
+#define MAX_POOLS_PER_CLIENT 16
 
 #define MAX_CLIENTS 16
 #define LOCAL_CLIENT ((uint16_t)-1)
@@ -948,14 +952,21 @@ static struct tmem_pool *zcache_get_pool_by_id(uint16_t cli_id, uint16_t poolid)
 	struct tmem_pool *pool = NULL;
 	struct zcache_client *cli = NULL;
 
-	cli = get_zcache_client(cli_id);
-	if (!cli)
-		goto out;
-
-	atomic_inc(&cli->refcount);
-	pool = idr_find(&cli->tmem_pools, poolid);
-	if (pool != NULL)
-		atomic_inc(&pool->refcount);
+	if (cli_id == LOCAL_CLIENT)
+		cli = &zcache_host;
+	else {
+		if (cli_id >= MAX_CLIENTS)
+			goto out;
+		cli = &zcache_clients[cli_id];
+		if (cli == NULL)
+			goto out;
+		atomic_inc(&cli->refcount);
+	}
+	if (poolid < MAX_POOLS_PER_CLIENT) {
+		pool = cli->tmem_pools[poolid];
+		if (pool != NULL)
+			atomic_inc(&pool->refcount);
+	}
 out:
 	return pool;
 }
@@ -973,11 +984,13 @@ static void zcache_put_pool(struct tmem_pool *pool)
 
 int zcache_new_client(uint16_t cli_id)
 {
-	struct zcache_client *cli;
+	struct zcache_client *cli = NULL;
 	int ret = -1;
 
-	cli = get_zcache_client(cli_id);
-
+	if (cli_id == LOCAL_CLIENT)
+		cli = &zcache_host;
+	else if ((unsigned int)cli_id < MAX_CLIENTS)
+		cli = &zcache_clients[cli_id];
 	if (cli == NULL)
 		goto out;
 	if (cli->allocated)
@@ -987,7 +1000,6 @@ int zcache_new_client(uint16_t cli_id)
 	cli->zspool = zs_create_pool("zcache", ZCACHE_GFP_MASK);
 	if (cli->zspool == NULL)
 		goto out;
-	idr_init(&cli->tmem_pools);
 #endif
 	ret = 0;
 out:
@@ -1992,7 +2004,7 @@ static int __init zcache_comp_init(void)
 					zcache_comp_name);
 	}
 	if (!ret)
-		strcpy(zcache_comp_name, ZCACHE_COMPRESSOR_DEFAULT);
+		strcpy(zcache_comp_name, "lzo");
 	ret = crypto_has_comp(zcache_comp_name, 0, 0);
 	if (!ret) {
 		ret = 1;
