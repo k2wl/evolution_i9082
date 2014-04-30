@@ -665,6 +665,13 @@ static ssize_t disksize_store(struct device *dev,
 		goto out_destroy_comp;
 	}
 
+#ifdef CONFIG_ZRAM_FOR_ANDROID
+        if (!disksize) {
+                disksize = disksize *
+                                        ((totalram_pages << PAGE_SHIFT) / 100);
+        }
+#endif
+
 	zram->meta = meta;
 	zram->comp = comp;
 	zram->disksize = disksize;
