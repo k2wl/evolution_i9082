@@ -10,7 +10,7 @@ NAME = Sodden Ben Lomond
 # Comments in this file are targeted only to the developer, do not
 # expect to learn how to build the kernel reading this file.
 
-CKVERSION = -ck1
+CKVERSION = -hybrid
 CKNAME = BFS Powered
 EXTRAVERSION := $(EXTRAVERSION)$(CKVERSION)
 
@@ -201,7 +201,7 @@ ARCH		?= arm
 #CROSS_COMPILE	?= /home/android/SM4.8/bin/arm-eabi-
 #CROSS_COMPILE	?= /home/k2wl/k2wl-linaro-4.8/bin/arm-cortex_a9-linux-gnueabi-
 #CROSS_COMPILE	?= /home/k2wl/k2wl4.8/bin/arm-cortex_a9-linux-gnueabi-
-CROSS_COMPILE	?= /home/k2wl/sm-arm-eabi-4.10/bin/arm-eabi-
+CROSS_COMPILE	?= /home/kar/sm-arm-eabi-4.10/bin/arm-eabi-
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
