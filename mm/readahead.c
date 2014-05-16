@@ -23,6 +23,7 @@ unsigned long max_readahead_pages = VM_MAX_READAHEAD * 1024 / PAGE_CACHE_SIZE;
 static int __init readahead(char *str)
 {
 	unsigned long bytes;
+
 	if (!str)
 		return -EINVAL;
 	bytes = memparse(str, &str);
@@ -32,10 +33,8 @@ static int __init readahead(char *str)
 	if (bytes) {
 		if (bytes < PAGE_CACHE_SIZE)	/* missed 'k'/'m' suffixes? */
 			return -EINVAL;
-
-
-		if (bytes > 256 << 20)		/* limit to 256MB */
-			bytes = 256 << 20;
+		if (bytes > 128 << 20)		/* limit to 128MB */
+			bytes = 128 << 20;
 	}
 
 	max_readahead_pages = bytes / PAGE_CACHE_SIZE;
@@ -44,6 +43,7 @@ static int __init readahead(char *str)
 }
 
 early_param("readahead", readahead);
+
 /*
  * Initialise a struct file's readahead state.  Assumes that the caller has
  * memset *ra to zero.
@@ -210,9 +210,6 @@ __do_page_cache_readahead(struct address_space *mapping, struct file *filp,
 		if (!page)
 			break;
 		page->index = page_offset;
-
-		page->flags |= (1L << PG_readahead);
-
 		list_add(&page->lru, &page_pool);
 		if (page_idx == nr_to_read - lookahead_size)
 			SetPageReadahead(page);

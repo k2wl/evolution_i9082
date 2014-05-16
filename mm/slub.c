@@ -16,7 +16,6 @@
 #include <linux/interrupt.h>
 #include <linux/bitops.h>
 #include <linux/slab.h>
-#include "slab.h"
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include <linux/kmemcheck.h>
@@ -182,6 +181,13 @@ static int kmem_size = sizeof(struct kmem_cache);
 static struct notifier_block slab_notifier;
 #endif
 
+static enum {
+	DOWN,		/* No slab functionality available */
+	PARTIAL,	/* Kmem_cache_node works */
+	UP,		/* Everything works but does not show up in sysfs */
+	SYSFS		/* Sysfs up */
+} slab_state = DOWN;
+
 /* A list of all slab caches on the system */
 static DECLARE_RWSEM(slub_lock);
 static LIST_HEAD(slab_caches);
@@ -230,6 +236,11 @@ static inline void stat(const struct kmem_cache *s, enum stat_item si)
  * 			Core slab cache functions
  *******************************************************************/
 
+int slab_is_available(void)
+{
+	return slab_state >= UP;
+}
+
 static inline struct kmem_cache_node *get_node(struct kmem_cache *s, int node)
 {
 	return s->node[node];
@@ -256,11 +267,6 @@ static inline int check_valid_pointer(struct kmem_cache *s,
 static inline void *get_freepointer(struct kmem_cache *s, void *object)
 {
 	return *(void **)(object + s->offset);
-}
-
-static void prefetch_freepointer(const struct kmem_cache *s, void *object)
-{
-	prefetch(object + s->offset);
 }
 
 static inline void *get_freepointer_safe(struct kmem_cache *s, void *object)
@@ -353,21 +359,6 @@ static __always_inline void slab_unlock(struct page *page)
 	__bit_spin_unlock(PG_locked, &page->flags);
 }
 
-static inline void set_page_slub_counters(struct page *page, unsigned long counters_new)
-{
-	struct page tmp;
-	tmp.counters = counters_new;
-	/*
-	 * page->counters can cover frozen/inuse/objects as well
-	 * as page->_count.  If we assign to ->counters directly
-	 * we run the risk of losing updates to page->_count, so
-	 * be careful and only assign to the fields we need.
-	 */
-	page->frozen  = tmp.frozen;
-	page->inuse   = tmp.inuse;
-	page->objects = tmp.objects;
-}
-
 /* Interrupts must be disabled (for the fallback code to work right) */
 static inline bool __cmpxchg_double_slab(struct kmem_cache *s, struct page *page,
 		void *freelist_old, unsigned long counters_old,
@@ -375,8 +366,7 @@ static inline bool __cmpxchg_double_slab(struct kmem_cache *s, struct page *page
 		const char *n)
 {
 	VM_BUG_ON(!irqs_disabled());
-#if defined(CONFIG_HAVE_CMPXCHG_DOUBLE) && \
-    defined(CONFIG_HAVE_ALIGNED_STRUCT_PAGE)
+#ifdef CONFIG_CMPXCHG_DOUBLE
 	if (s->flags & __CMPXCHG_DOUBLE) {
 		if (cmpxchg_double(&page->freelist,
 			freelist_old, counters_old,
@@ -388,7 +378,7 @@ static inline bool __cmpxchg_double_slab(struct kmem_cache *s, struct page *page
 		slab_lock(page);
 		if (page->freelist == freelist_old && page->counters == counters_old) {
 			page->freelist = freelist_new;
-			set_page_slub_counters(page, counters_new);
+			page->counters = counters_new;
 			slab_unlock(page);
 			return 1;
 		}
@@ -410,8 +400,7 @@ static inline bool cmpxchg_double_slab(struct kmem_cache *s, struct page *page,
 		void *freelist_new, unsigned long counters_new,
 		const char *n)
 {
-#if defined(CONFIG_HAVE_CMPXCHG_DOUBLE) && \
-    defined(CONFIG_HAVE_ALIGNED_STRUCT_PAGE)
+#ifdef CONFIG_CMPXCHG_DOUBLE
 	if (s->flags & __CMPXCHG_DOUBLE) {
 		if (cmpxchg_double(&page->freelist,
 			freelist_old, counters_old,
@@ -426,7 +415,7 @@ static inline bool cmpxchg_double_slab(struct kmem_cache *s, struct page *page,
 		slab_lock(page);
 		if (page->freelist == freelist_old && page->counters == counters_old) {
 			page->freelist = freelist_new;
-			set_page_slub_counters(page, counters_new);
+			page->counters = counters_new;
 			slab_unlock(page);
 			local_irq_restore(flags);
 			return 1;
@@ -680,7 +669,7 @@ static int check_bytes_and_report(struct kmem_cache *s, struct page *page,
 	u8 *fault;
 	u8 *end;
 
-	fault = memchr_inv(start, value, bytes);
+	//fault = memchr_inv(start, value, bytes);
 	if (!fault)
 		return 1;
 
@@ -773,7 +762,7 @@ static int slab_pad_check(struct kmem_cache *s, struct page *page)
 	if (!remainder)
 		return 1;
 
-	fault = memchr_inv(end - remainder, POISON_INUSE, remainder);
+	//fault = memchr_inv(end - remainder, POISON_INUSE, remainder);
 	if (!fault)
 		return 1;
 	while (end > fault && end[-1] == POISON_INUSE)
@@ -2309,8 +2298,6 @@ redo:
 		object = __slab_alloc(s, gfpflags, node, addr, c);
 
 	else {
-		void *next_object = get_freepointer_safe(s, object);
-
 		/*
 		 * The cmpxchg will only match if there was no additional
 		 * operation and if we are on the right processor.
@@ -2326,12 +2313,11 @@ redo:
 		if (unlikely(!irqsafe_cpu_cmpxchg_double(
 				s->cpu_slab->freelist, s->cpu_slab->tid,
 				object, tid,
-				next_object, next_tid(tid)))) {
+				get_freepointer_safe(s, object), next_tid(tid)))) {
 
 			note_cmpxchg_failure("slab_alloc", s, tid);
 			goto redo;
 		}
-		prefetch_freepointer(s, next_object);
 		stat(s, ALLOC_FASTPATH);
 	}
 
@@ -3019,8 +3005,7 @@ static int kmem_cache_open(struct kmem_cache *s,
 		}
 	}
 
-#if defined(CONFIG_HAVE_CMPXCHG_DOUBLE) && \
-    defined(CONFIG_HAVE_ALIGNED_STRUCT_PAGE)
+#ifdef CONFIG_CMPXCHG_DOUBLE
 	if (system_has_cmpxchg_double() && (s->flags & SLAB_DEBUG_FLAGS) == 0)
 		/* Enable fast mode */
 		s->flags |= __CMPXCHG_DOUBLE;
@@ -3892,11 +3877,14 @@ static struct kmem_cache *find_mergeable(size_t size,
 	return NULL;
 }
 
-struct kmem_cache *__kmem_cache_create(const char *name, size_t size,
+struct kmem_cache *kmem_cache_create(const char *name, size_t size,
 		size_t align, unsigned long flags, void (*ctor)(void *))
 {
 	struct kmem_cache *s;
 	char *n;
+
+	if (WARN_ON(!name))
+		return NULL;
 
 	down_write(&slub_lock);
 	s = find_mergeable(size, align, flags, name, ctor);
@@ -3936,13 +3924,19 @@ struct kmem_cache *__kmem_cache_create(const char *name, size_t size,
 			}
 			return s;
 		}
+		kfree(n);
 		kfree(s);
 	}
-	kfree(n);
 err:
 	up_write(&slub_lock);
+
+	if (flags & SLAB_PANIC)
+		panic("Cannot create slabcache %s\n", name);
+	else
+		s = NULL;
 	return s;
 }
+EXPORT_SYMBOL(kmem_cache_create);
 
 #ifdef CONFIG_SMP
 /*
@@ -4649,8 +4643,6 @@ static ssize_t cpu_partial_store(struct kmem_cache *s, const char *buf,
 	err = strict_strtoul(buf, 10, &objects);
 	if (err)
 		return err;
-	if (objects && kmem_cache_debug(s))
-		return -EINVAL;
 
 	s->cpu_partial = objects;
 	flush_all(s);
@@ -5241,7 +5233,7 @@ static int sysfs_slab_add(struct kmem_cache *s)
 	const char *name;
 	int unmergeable;
 
-	if (slab_state < FULL)
+	if (slab_state < SYSFS)
 		/* Defer until later */
 		return 0;
 
@@ -5286,7 +5278,7 @@ static int sysfs_slab_add(struct kmem_cache *s)
 
 static void sysfs_slab_remove(struct kmem_cache *s)
 {
-	if (slab_state < FULL)
+	if (slab_state < SYSFS)
 		/*
 		 * Sysfs has not been setup yet so no need to remove the
 		 * cache from sysfs.
@@ -5314,7 +5306,7 @@ static int sysfs_slab_alias(struct kmem_cache *s, const char *name)
 {
 	struct saved_alias *al;
 
-	if (slab_state == FULL) {
+	if (slab_state == SYSFS) {
 		/*
 		 * If we have a leftover link then remove it.
 		 */
@@ -5347,7 +5339,7 @@ static int __init slab_sysfs_init(void)
 		return -ENOSYS;
 	}
 
-	slab_state = FULL;
+	slab_state = SYSFS;
 
 	list_for_each_entry(s, &slab_caches, list) {
 		err = sysfs_slab_add(s);

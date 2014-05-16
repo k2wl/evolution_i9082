@@ -16,7 +16,7 @@
 #include <linux/nodemask.h>
 #include <linux/pageblock-flags.h>
 #include <generated/bounds.h>
-#include <linux/atomic.h>
+#include <asm/atomic.h>
 #include <asm/page.h>
 
 /* Free memory management - zoned buddy allocator.  */
@@ -35,13 +35,39 @@
  */
 #define PAGE_ALLOC_COSTLY_ORDER 3
 
-#define MIGRATE_UNMOVABLE     0
-#define MIGRATE_RECLAIMABLE   1
-#define MIGRATE_MOVABLE       2
-#define MIGRATE_PCPTYPES      3 /* the number of types on the pcp lists */
-#define MIGRATE_RESERVE       3
-#define MIGRATE_ISOLATE       4 /* can't allocate from here */
-#define MIGRATE_TYPES         5
+enum {
+	MIGRATE_UNMOVABLE,
+	MIGRATE_RECLAIMABLE,
+	MIGRATE_MOVABLE,
+	MIGRATE_PCPTYPES,	/* the number of types on the pcp lists */
+	MIGRATE_RESERVE = MIGRATE_PCPTYPES,
+#ifdef CONFIG_CMA
+	/*
+	 * MIGRATE_CMA migration type is designed to mimic the way
+	 * ZONE_MOVABLE works.  Only movable pages can be allocated
+	 * from MIGRATE_CMA pageblocks and page allocator never
+	 * implicitly change migration type of MIGRATE_CMA pageblock.
+	 *
+	 * The way to use it is to change migratetype of a range of
+	 * pageblocks to MIGRATE_CMA which can be done by
+	 * __free_pageblock_cma() function.  What is important though
+	 * is that a range of pageblocks must be aligned to
+	 * MAX_ORDER_NR_PAGES should biggest page be bigger then
+	 * a single pageblock.
+	 */
+	MIGRATE_CMA,
+#endif
+	MIGRATE_ISOLATE,	/* can't allocate from here */
+	MIGRATE_TYPES
+};
+
+#ifdef CONFIG_CMA
+#  define is_migrate_cma(migratetype) unlikely((migratetype) == MIGRATE_CMA)
+#  define cma_wmark_pages(zone)	(zone->min_cma_pages)
+#else
+#  define is_migrate_cma(migratetype) false
+#  define cma_wmark_pages(zone) 0
+#endif
 
 #define for_each_migratetype_order(order, type) \
 	for (order = 0; order < MAX_ORDER; order++) \
@@ -114,6 +140,16 @@ enum zone_stat_item {
 	NUMA_LOCAL,		/* allocation from local node */
 	NUMA_OTHER,		/* allocation from other node */
 #endif
+#ifdef CONFIG_CMA
+	NR_FREE_CMA_PAGES,
+	NR_LRU_CMA_BASE,
+	NR_CMA_INACTIVE_ANON = NR_LRU_CMA_BASE,
+	NR_CMA_ACTIVE_ANON,
+	NR_CMA_INACTIVE_FILE,
+	NR_CMA_ACTIVE_FILE,
+	NR_CMA_UNEVICTABLE,
+	NR_CONTIG_PAGES,
+#endif
 	NR_ANON_TRANSPARENT_HUGEPAGES,
 #ifdef CONFIG_UKSM
 	NR_UKSM_ZERO_PAGES,
@@ -142,6 +178,19 @@ enum lru_list {
 	NR_LRU_LISTS
 };
 
+#ifdef CONFIG_CMA
+#define LRU_CMA_BASE	(NR_LRU_LISTS)
+enum lru_cma_lists {
+	LRU_CMA_INACTIVE_ANON = LRU_CMA_BASE,
+	LRU_CMA_ACTIVE_ANON = LRU_CMA_BASE + LRU_ACTIVE,
+	LRU_CMA_INACTIVE_FILE = LRU_CMA_BASE + LRU_FILE,
+	LRU_CMA_ACTIVE_FILE = LRU_CMA_BASE + LRU_FILE + LRU_ACTIVE,
+	NR_LRU_LISTS_CMA,
+};
+#else
+#define NR_LRU_LISTS_CMA	(NR_LRU_LISTS)
+#endif /* ! CONFIG_CMA */
+
 #define for_each_lru(l) for (l = 0; l < NR_LRU_LISTS; l++)
 
 #define for_each_evictable_lru(l) for (l = 0; l <= LRU_ACTIVE_FILE; l++)
@@ -160,20 +209,6 @@ static inline int is_unevictable_lru(enum lru_list l)
 {
 	return (l == LRU_UNEVICTABLE);
 }
-
-/* Isolate inactive pages */
-#define ISOLATE_INACTIVE	((__force isolate_mode_t)0x1)
-/* Isolate active pages */
-#define ISOLATE_ACTIVE		((__force isolate_mode_t)0x2)
-/* Isolate clean file */
-#define ISOLATE_CLEAN		((__force isolate_mode_t)0x4)
-/* Isolate unmapped file */
-#define ISOLATE_UNMAPPED	((__force isolate_mode_t)0x8)
-/* Isolate for asynchronous migration */
-#define ISOLATE_ASYNC_MIGRATE	((__force isolate_mode_t)0x10)
-
-/* LRU Isolation modes. */
-typedef unsigned __bitwise__ isolate_mode_t;
 
 enum zone_watermarks {
 	WMARK_MIN,
@@ -332,6 +367,20 @@ struct zone {
 #ifdef CONFIG_MEMORY_HOTPLUG
 	/* see spanned/present_pages for more description */
 	seqlock_t		span_seqlock;
+#endif
+#ifdef CONFIG_CMA
+	/*
+	 * CMA needs to increase watermark levels during the allocation
+	 * process to make sure that the system is not starved.
+	 */
+	unsigned long		min_cma_pages;
+	/* This tells us how many free MIGRATE_CMA pages exist on the free
+	 * list per-order. This will help us determine the watermark checks
+	 * so the reclaim happens faster if we are running out of
+	 * non-MIGRATE_CMA pages that kernel needs
+	 */
+	unsigned long		nr_cma_free[MAX_ORDER];
+
 #endif
 	struct free_area	free_area[MAX_ORDER];
 

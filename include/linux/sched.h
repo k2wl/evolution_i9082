@@ -39,8 +39,6 @@
 #define SCHED_BATCH		3
 /* SCHED_ISO: reserved but not implemented yet */
 #define SCHED_IDLE		5
-#define SCHED_IDLEPRIO		SCHED_IDLE
-
 /* Can be ORed in to make sure the process is reverted back to SCHED_NORMAL on fork */
 #define SCHED_RESET_ON_FORK     0x40000000
 
@@ -124,10 +122,10 @@ extern void get_avenrun(unsigned long *loads, unsigned long offset, int shift);
 
 #define FSHIFT		11		/* nr of bits of precision */
 #define FIXED_1		(1<<FSHIFT)	/* 1.0 as fixed-point */
-#define LOAD_FREQ	(4*HZ+61)	/* 5 sec intervals */
-#define EXP_1		1896		/* 1/exp(5sec/1min) as fixed-point */
-#define EXP_5		2017		/* 1/exp(5sec/5min) */
-#define EXP_15		2038		/* 1/exp(5sec/15min) */
+#define LOAD_FREQ	(5*HZ+1)	/* 5 sec intervals */
+#define EXP_1		1884		/* 1/exp(5sec/1min) as fixed-point */
+#define EXP_5		2014		/* 1/exp(5sec/5min) */
+#define EXP_15		2037		/* 1/exp(5sec/15min) */
 
 #define CALC_LOAD(load,exp,n) \
 	load *= exp; \
@@ -141,15 +139,12 @@ extern int nr_processes(void);
 extern unsigned long nr_running(void);
 extern unsigned long nr_uninterruptible(void);
 extern unsigned long nr_iowait(void);
-extern unsigned long avg_nr_running(void);
 extern unsigned long nr_iowait_cpu(int cpu);
 extern unsigned long this_cpu_load(void);
-#ifdef CONFIG_ZRAM_FOR_ANDROID
-extern unsigned long this_cpu_loadx(int i);
-#endif /* CONFIG_ZRAM_FOR_ANDROID */
+
+
 extern void calc_global_load(unsigned long ticks);
 
-extern void prepare_calc_load(void);
 extern unsigned long get_parent_ip(unsigned long addr);
 
 struct seq_file;
@@ -272,6 +267,8 @@ extern void sched_init_smp(void);
 extern asmlinkage void schedule_tail(struct task_struct *prev);
 extern void init_idle(struct task_struct *idle, int cpu);
 extern void init_idle_bootup_task(struct task_struct *idle);
+
+extern int runqueue_is_locked(int cpu);
 
 extern cpumask_var_t nohz_cpu_mask;
 #if defined(CONFIG_SMP) && defined(CONFIG_NO_HZ)
@@ -906,7 +903,6 @@ struct sched_group_power {
 	 * single CPU.
 	 */
 	unsigned int power, power_orig;
-	unsigned long next_update;
 };
 
 struct sched_group {
@@ -966,7 +962,6 @@ struct sched_domain {
 	unsigned int nr_balance_failed; /* initialise to 0 */
 
 	u64 last_update;
-	u64 max_newidle_lb_cost;
 
 #ifdef CONFIG_SCHEDSTATS
 	/* load_balance() stats */
@@ -1233,12 +1228,9 @@ struct task_struct {
 
 #ifdef CONFIG_SMP
 	struct task_struct *wake_entry;
+	int on_cpu;
 #endif
-#if defined(CONFIG_SMP)
-	bool on_cpu;
-#endif
-#endif
-	bool on_rq;
+	int on_rq;
 
 	int prio, static_prio, normal_prio;
 	unsigned int rt_priority;
@@ -1273,6 +1265,9 @@ struct task_struct {
 #ifdef CONFIG_PREEMPT_RCU
 	int rcu_read_lock_nesting;
 	char rcu_read_unlock_special;
+#if defined(CONFIG_RCU_BOOST) && defined(CONFIG_TREE_PREEMPT_RCU)
+	int rcu_boosted;
+#endif /* #if defined(CONFIG_RCU_BOOST) && defined(CONFIG_TREE_PREEMPT_RCU) */
 	struct list_head rcu_node_entry;
 #endif /* #ifdef CONFIG_PREEMPT_RCU */
 #ifdef CONFIG_TREE_PREEMPT_RCU
@@ -1310,8 +1305,6 @@ struct task_struct {
 				 * execve */
 	unsigned in_iowait:1;
 
-	/* task may not gain privileges */
-	unsigned no_new_privs:1;
 
 	/* Revert to default priority/policy when forking */
 	unsigned sched_reset_on_fork:1;
@@ -1583,42 +1576,6 @@ struct task_struct {
 #endif
 };
 
-extern int runqueue_is_locked(int cpu);
-static inline void cpu_scaling(int cpu)
-{
-}
-
-static inline void cpu_nonscaling(int cpu)
-{
-}
-#define tsk_seruntime(t)	((t)->se.sum_exec_runtime)
-#define tsk_rttimeout(t)	((t)->rt.timeout)
-
-static inline void tsk_cpus_current(struct task_struct *p)
-{
-	p->rt.nr_cpus_allowed = current->rt.nr_cpus_allowed;
-}
-
-static inline void print_scheduler_version(void)
-{
-	printk(KERN_INFO"CFS CPU scheduler.\n");
-}
-
-static inline bool iso_task(struct task_struct *p)
-{
-	return false;
-}
-
-static inline void remove_cpu(int cpu)
-{
-}
-
-/* Anyone feel like implementing this? */
-static inline int above_background_load(void)
-{
-	return 1;
-}
-
 /* Future-safe accessor for struct task_struct's cpus_allowed. */
 #define tsk_cpus_allowed(tsk) (&(tsk)->cpus_allowed)
 
@@ -1636,11 +1593,10 @@ static inline int above_background_load(void)
  */
 
 #define MAX_USER_RT_PRIO	100
-#define MAX_RT_PRIO		(MAX_USER_RT_PRIO + 1)
-#define DEFAULT_PRIO		(MAX_RT_PRIO + 20)
+#define MAX_RT_PRIO		MAX_USER_RT_PRIO
 
 #define MAX_PRIO		(MAX_RT_PRIO + 40)
-#define NORMAL_PRIO		DEFAULT_PRIO
+#define DEFAULT_PRIO		(MAX_RT_PRIO + 20)
 
 static inline int rt_prio(int prio)
 {
@@ -1921,13 +1877,6 @@ static inline int set_cpus_allowed_ptr(struct task_struct *p,
 }
 #endif
 
-#ifdef CONFIG_NO_HZ
-void calc_load_enter_idle(void);
-void calc_load_exit_idle(void);
-#else
-static inline void calc_load_enter_idle(void) { }
-static inline void calc_load_exit_idle(void) { }
-#endif /* CONFIG_NO_HZ */
 #ifndef CONFIG_CPUMASK_OFFSTACK
 static inline int set_cpus_allowed(struct task_struct *p, cpumask_t new_mask)
 {
@@ -1997,7 +1946,7 @@ extern unsigned long long
 task_sched_runtime(struct task_struct *task);
 
 /* sched_exec is called by processes performing an exec */
-#if defined(CONFIG_SMP)
+#ifdef CONFIG_SMP
 extern void sched_exec(void);
 #else
 #define sched_exec()   {}
@@ -2017,8 +1966,6 @@ extern void wake_up_idle_cpu(int cpu);
 #else
 static inline void wake_up_idle_cpu(int cpu) { }
 #endif
-
-extern void force_cpu_resched(int cpu);
 
 extern unsigned int sysctl_sched_latency;
 extern unsigned int sysctl_sched_min_granularity;
@@ -2078,10 +2025,6 @@ static inline void sched_autogroup_create_attach(struct task_struct *p) { }
 static inline void sched_autogroup_detach(struct task_struct *p) { }
 static inline void sched_autogroup_fork(struct signal_struct *sig) { }
 static inline void sched_autogroup_exit(struct signal_struct *sig) { }
-#endif
-
-#ifdef CONFIG_CFS_BANDWIDTH
-extern unsigned int sysctl_sched_cfs_bandwidth_slice;
 #endif
 
 #ifdef CONFIG_RT_MUTEXES
@@ -2674,7 +2617,7 @@ static inline void ptrace_signal_wake_up(struct task_struct *t, bool resume)
  */
 #ifdef CONFIG_SMP
 
-static inline int task_cpu(const struct task_struct *p)
+static inline unsigned int task_cpu(const struct task_struct *p)
 {
 	return task_thread_info(p)->cpu;
 }
@@ -2683,12 +2626,12 @@ extern void set_task_cpu(struct task_struct *p, unsigned int cpu);
 
 #else
 
-static inline int task_cpu(const struct task_struct *p)
+static inline unsigned int task_cpu(const struct task_struct *p)
 {
 	return 0;
 }
 
-static inline void set_task_cpu(struct task_struct *p, int cpu)
+static inline void set_task_cpu(struct task_struct *p, unsigned int cpu)
 {
 }
 
@@ -2812,4 +2755,7 @@ static inline unsigned long task_get_effective_timer_slack(
 	return tsk->timer_slack_ns;
 }
 #endif
+
 #endif /* __KERNEL__ */
+
+#endif

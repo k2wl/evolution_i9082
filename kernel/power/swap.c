@@ -564,7 +564,8 @@ static int enough_swap(unsigned int nr_pages, unsigned int flags)
 
 	pr_debug("PM: Free swap pages: %u\n", free_swap);
 
-	required = PAGES_FOR_IO + nr_pages;
+	required = PAGES_FOR_IO + ((flags & SF_NOCOMPRESS_MODE) ?
+		nr_pages : (nr_pages * LZO_CMP_PAGES) / LZO_UNC_PAGES + 1);
 	return free_swap > required;
 }
 
@@ -592,12 +593,10 @@ int swsusp_write(unsigned int flags)
 		printk(KERN_ERR "PM: Cannot get swap writer\n");
 		return error;
 	}
-	if (flags & SF_NOCOMPRESS_MODE) {
-		if (!enough_swap(pages, flags)) {
-			printk(KERN_ERR "PM: Not enough free swap\n");
-			error = -ENOSPC;
-			goto out_finish;
-		}
+	if (!enough_swap(pages, flags)) {
+		printk(KERN_ERR "PM: Not enough free swap\n");
+		error = -ENOSPC;
+		goto out_finish;
 	}
 	memset(&snapshot, 0, sizeof(struct snapshot_handle));
 	error = snapshot_read_next(&snapshot);

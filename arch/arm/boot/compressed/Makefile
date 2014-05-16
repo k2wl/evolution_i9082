@@ -23,11 +23,6 @@ AFLAGS_misc.o +=-Wa,-march=armv7-a$(plus_sec)
 MISC = misc.o
 AFLAGS_decompress.o += -Wa,-march=armv7-a$(plus_sec)
 DECOMPRESS = decompress.o
-
-ifeq ($(CONFIG_KERNEL_LZ4),y)
-CFLAGS_decompress.o := -Os
-endif
-
 FONTC	= $(srctree)/drivers/video/console/font_acorn_8x8.c
 
 #
@@ -92,15 +87,13 @@ SEDFLAGS	= s/TEXT_START/$(ZTEXTADDR)/;s/BSS_START/$(ZBSSADDR)/
 suffix_$(CONFIG_KERNEL_GZIP) = gzip
 suffix_$(CONFIG_KERNEL_LZO)  = lzo
 suffix_$(CONFIG_KERNEL_LZMA) = lzma
-suffix_$(CONFIG_KERNEL_XZ)   = xzkern
-suffix_$(CONFIG_KERNEL_LZ4)  = lz4
 
 targets := vmlinux vmlinux.lds \
 		 piggy.$(suffix_y) piggy.$(suffix_y).o \
 		 font.o font.c head.o misc.o decompress.o $(OBJS)
 
 # Make sure files are removed during clean
-extra-y       += piggy.gzip piggy.lzo piggy.lzma piggy.xzkern piggy.lz4 lib1funcs.S ashldi3.S
+extra-y       += piggy.gzip piggy.lzo piggy.lzma lib1funcs.S
 
 ifeq ($(CONFIG_FUNCTION_TRACER),y)
 ORIG_CFLAGS := $(KBUILD_CFLAGS)
@@ -152,15 +145,8 @@ $(obj)/longlong.h: $(srctree)/arch/$(SRCARCH)/lib/longlong.h FORCE
 $(obj)/divdi3.c: $(srctree)/arch/$(SRCARCH)/lib/divdi3.c $(obj)/longlong.h FORCE
 	$(call cmd,shipped)
 
-# For __aeabi_llsl
-ashldi3 = $(obj)/ashldi3.o
-
-$(obj)/ashldi3.S: $(srctree)/arch/$(SRCARCH)/lib/ashldi3.S FORCE
-	$(call cmd,shipped)
-
 $(obj)/vmlinux: $(obj)/vmlinux.lds $(obj)/$(HEAD) $(obj)/$(MISC) $(obj)/$(DECOMPRESS) $(obj)/piggy.$(suffix_y).o \
-	 	$(addprefix $(obj)/, $(OBJS)) $(lib1funcs) $(ashldi3) FORCE
-
+	 	$(addprefix $(obj)/, $(OBJS)) $(lib1funcs) FORCE
 	$(call if_changed,ld)
 	@$(check_for_bad_syms)
 

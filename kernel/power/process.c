@@ -45,7 +45,7 @@ static int try_to_freeze_tasks(bool sig_only)
 
 	do_gettimeofday(&start);
 
-	end_time = jiffies + msecs_to_jiffies(freeze_timeout_msecs); 
+	end_time = jiffies + msecs_to_jiffies(freeze_timeout_msecs);
 
 	if (!sig_only)
 		freeze_workqueues_begin();

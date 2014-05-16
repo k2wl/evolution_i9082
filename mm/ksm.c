@@ -374,20 +374,6 @@ static int break_ksm(struct vm_area_struct *vma, unsigned long addr)
 	return (ret & VM_FAULT_OOM) ? -ENOMEM : 0;
 }
 
-static struct vm_area_struct *find_mergeable_vma(struct mm_struct *mm,
-		unsigned long addr)
-{
-	struct vm_area_struct *vma;
-	if (ksm_test_exit(mm))
-		return NULL;
-	vma = find_vma(mm, addr);
-	if (!vma || vma->vm_start > addr)
-		return NULL;
-	if (!(vma->vm_flags & VM_MERGEABLE) || !vma->anon_vma)
-		return NULL;
-	return vma;
-}
-
 static void break_cow(struct rmap_item *rmap_item)
 {
 	struct mm_struct *mm = rmap_item->mm;
@@ -401,9 +387,15 @@ static void break_cow(struct rmap_item *rmap_item)
 	put_anon_vma(rmap_item->anon_vma);
 
 	down_read(&mm->mmap_sem);
-	vma = find_mergeable_vma(mm, addr);
-	if (vma)
-		break_ksm(vma, addr);
+	if (ksm_test_exit(mm))
+		goto out;
+	vma = find_vma(mm, addr);
+	if (!vma || vma->vm_start > addr)
+		goto out;
+	if (!(vma->vm_flags & VM_MERGEABLE) || !vma->anon_vma)
+		goto out;
+	break_ksm(vma, addr);
+out:
 	up_read(&mm->mmap_sem);
 }
 
@@ -429,8 +421,12 @@ static struct page *get_mergeable_page(struct rmap_item *rmap_item)
 	struct page *page;
 
 	down_read(&mm->mmap_sem);
-	vma = find_mergeable_vma(mm, addr);
-	if (!vma)
+	if (ksm_test_exit(mm))
+		goto out;
+	vma = find_vma(mm, addr);
+	if (!vma || vma->vm_start > addr)
+		goto out;
+	if (!(vma->vm_flags & VM_MERGEABLE) || !vma->anon_vma)
 		goto out;
 
 	page = follow_page(vma, addr, FOLL_GET);
@@ -556,11 +552,9 @@ static void remove_rmap_item_from_tree(struct rmap_item *rmap_item)
 		 * But be careful when an mm is exiting: do the rb_erase
 		 * if this rmap_item was inserted by this scan, rather
 		 * than left over from before.
-		 */	
+		 */
 		age = (unsigned char)(ksm_scan.seqnr - rmap_item->address);
-#ifndef CONFIG_KSM_CHECK_PAGE
 		BUG_ON(age > 1);
-#endif
 		if (!age)
 			rb_erase(&rmap_item->node, &root_unstable_tree);
 
@@ -1409,31 +1403,6 @@ next_mm:
 	return NULL;
 }
 
-static inline int is_page_scanned(struct page *page)
-{
-#ifdef CONFIG_KSM_CHECK_PAGE
-	/* page is already marked as ksm, so this will be simple merge */
-	if (PageKsm(page))
-		return 0;
-
-	if (ksm_scan.seqnr & 0x1) {
-		/* odd cycle */
-		/* clear even cycle bit */
-		ClearPageKsmScan0(page);
-		/* get old value and mark it scanned */
-		return TestSetPageKsmScan1(page);
-	} else {
-		/* even cycle */
-		/* clear odd cycle bit */
-		ClearPageKsmScan1(page);
-		/* get old value and mark it scanned */
-		return TestSetPageKsmScan0(page);
-	}
-#else
-	return 0;
-#endif
-}
-
 /**
  * ksm_do_scan  - the ksm scanner main worker function.
  * @scan_npages - number of pages we want to scan before we return.
@@ -1448,10 +1417,8 @@ static void ksm_do_scan(unsigned int scan_npages)
 		rmap_item = scan_get_next_rmap_item(&page);
 		if (!rmap_item)
 			return;
-		if (!PageKsm(page) || !in_stable_tree(rmap_item)) {
-			if (!is_page_scanned(page))
-				cmp_and_merge_page(page, rmap_item);
-		}
+		if (!PageKsm(page) || !in_stable_tree(rmap_item))
+			cmp_and_merge_page(page, rmap_item);
 		put_page(page);
 	}
 }
@@ -1938,8 +1905,7 @@ static ssize_t run_store(struct kobject *kobj, struct kobj_attribute *attr,
 
 			oom_score_adj = test_set_oom_score_adj(OOM_SCORE_ADJ_MAX);
 			err = unmerge_and_remove_all_rmap_items();
-			compare_swap_oom_score_adj(OOM_SCORE_ADJ_MAX,
-								oom_score_adj);
+			test_set_oom_score_adj(oom_score_adj);
 			if (err) {
 				ksm_run = KSM_RUN_STOP;
 				count = err;

@@ -19,7 +19,7 @@
 
 #include <mach/rdb/brcm_rdb_csr.h>
 
-#define MAX_MEMC_PENDING_TICK    500
+#define MAX_MEMC_PENDING_TICK    1000
 
 /* CPU frequency to trigger downspeed of DDR */
 #define DEFAULT_CPU_FREQ_TRIGGER    312000
@@ -31,11 +31,11 @@
  * 0x1 - crystal at 26 MHz
  */
 enum {
-	DDR_PLL_26M,
+	DDR_PLL_26M = 1,
 	DDR_PLL_156M,
-	DDR_PLL_400M =1
+	DDR_PLL_400M
 };
-#define DEFAULT_DDR_SPEED_CAP    0x3
+#define DEFAULT_DDR_SPEED_CAP    0x2
 
 struct cpufreq_memc_ctrl {
 	spinlock_t trans_lock;

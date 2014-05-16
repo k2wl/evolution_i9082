@@ -517,7 +517,7 @@ static unsigned int uksm_sleep_saved;
 /* Max percentage of cpu utilization ksmd can take to scan in one batch */
 static unsigned int uksm_max_cpu_percentage;
 
-static int uksm_cpu_governor = 3;
+static int uksm_cpu_governor;
 
 static char *uksm_cpu_governor_str[4] = { "full", "medium", "low", "quiet" };
 
@@ -4897,7 +4897,7 @@ static int uksm_memory_callback(struct notifier_block *self,
 	static struct kobj_attribute _name##_attr = __ATTR_RO(_name)
 #define UKSM_ATTR(_name) \
 	static struct kobj_attribute _name##_attr = \
-		__ATTR(_name, 0666, _name##_show, _name##_store)
+		__ATTR(_name, 0644, _name##_show, _name##_store)
 
 static ssize_t max_cpu_percentage_show(struct kobject *kobj,
 				    struct kobj_attribute *attr, char *buf)
@@ -4912,7 +4912,7 @@ static ssize_t max_cpu_percentage_store(struct kobject *kobj,
 	unsigned long max_cpu_percentage;
 	int err;
 
-	err = kstrtoul(buf, 10, &max_cpu_percentage);
+	err = strict_strtoul(buf, 10, &max_cpu_percentage);
 	if (err || max_cpu_percentage > 100)
 		return -EINVAL;
 
@@ -4940,7 +4940,7 @@ static ssize_t sleep_millisecs_store(struct kobject *kobj,
 	unsigned long msecs;
 	int err;
 
-	err = kstrtoul(buf, 10, &msecs);
+	err = strict_strtoul(buf, 10, &msecs);
 	if (err || msecs > MSEC_PER_SEC)
 		return -EINVAL;
 
@@ -5026,7 +5026,7 @@ static ssize_t run_store(struct kobject *kobj, struct kobj_attribute *attr,
 	int err;
 	unsigned long flags;
 
-	err = kstrtoul(buf, 10, &flags);
+	err = strict_strtoul(buf, 10, &flags);
 	if (err || flags > UINT_MAX)
 		return -EINVAL;
 	if (flags > UKSM_RUN_MERGE)
@@ -5058,7 +5058,7 @@ static ssize_t abundant_threshold_store(struct kobject *kobj,
 	int err;
 	unsigned long flags;
 
-	err = kstrtoul(buf, 10, &flags);
+	err = strict_strtoul(buf, 10, &flags);
 	if (err || flags > 99)
 		return -EINVAL;
 
@@ -5081,7 +5081,7 @@ static ssize_t thrash_threshold_store(struct kobject *kobj,
 	int err;
 	unsigned long flags;
 
-	err = kstrtoul(buf, 10, &flags);
+	err = strict_strtoul(buf, 10, &flags);
 	if (err || flags > 99)
 		return -EINVAL;
 
@@ -5142,13 +5142,13 @@ static ssize_t cpu_ratios_store(struct kobject *kobj,
 
 		if (strstr(p, "MAX/")) {
 			p = strchr(p, '/') + 1;
-			err = kstrtoul(p, 10, &value);
+			err = strict_strtoul(p, 10, &value);
 			if (err || value > TIME_RATIO_SCALE || !value)
 				return -EINVAL;
 
 			cpuratios[i] = - (int) (TIME_RATIO_SCALE / value);
 		} else {
-			err = kstrtoul(p, 10, &value);
+			err = strict_strtoul(p, 10, &value);
 			if (err || value > TIME_RATIO_SCALE || !value)
 				return -EINVAL;
 
@@ -5211,7 +5211,7 @@ static ssize_t eval_intervals_store(struct kobject *kobj,
 			*end = '\0';
 		}
 
-		err = kstrtoul(p, 10, &values[i]);
+		err = strict_strtoul(p, 10, &values[i]);
 		if (err)
 			return -EINVAL;
 

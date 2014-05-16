@@ -27,13 +27,12 @@
 #include <linux/clockchips.h>
 #include <linux/completion.h>
 
-#include <linux/atomic.h>
+#include <asm/atomic.h>
 #include <asm/cacheflush.h>
 #include <asm/cpu.h>
 #include <asm/cputype.h>
 
 #include <asm/idmap.h>
-#include <asm/topology.h>
 #include <asm/mmu_context.h>
 #include <asm/pgtable.h>
 #include <asm/pgalloc.h>
@@ -62,8 +61,6 @@ enum ipi_msg_type {
 	IPI_CPU_STOP,
 	IPI_CPU_BACKTRACE,
 };
-
-static DECLARE_COMPLETION(cpu_running);
 
 int __cpuinit __cpu_up(unsigned int cpu)
 {
@@ -124,12 +121,20 @@ int __cpuinit __cpu_up(unsigned int cpu)
 	 */
 	ret = boot_secondary(cpu, idle);
 	if (ret == 0) {
+		unsigned long timeout;
+
 		/*
 		 * CPU was successfully started, wait for it
 		 * to come online or time out.
 		 */
-		wait_for_completion_timeout(&cpu_running,
-						 msecs_to_jiffies(1000));
+		timeout = jiffies + HZ;
+		while (time_before(jiffies, timeout)) {
+			if (cpu_online(cpu))
+				break;
+
+			udelay(10);
+			barrier();
+		}
 
 		if (!cpu_online(cpu)) {
 			pr_crit("CPU%u: failed to come online\n", cpu);
@@ -270,8 +275,6 @@ static void __cpuinit smp_store_cpu_info(unsigned int cpuid)
 	struct cpuinfo_arm *cpu_info = &per_cpu(cpu_data, cpuid);
 
 	cpu_info->loops_per_jiffy = loops_per_jiffy;
-
-	store_cpu_topology(cpuid);
 }
 
 /*
@@ -282,8 +285,6 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 {
 	struct mm_struct *mm = &init_mm;
 	unsigned int cpu;
-
-	cpu_init();
 
 	/*
 	 * The identity mapping is uncached (strongly ordered), so
@@ -303,6 +304,8 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	cpumask_set_cpu(cpu, mm_cpumask(mm));
 
 	printk("CPU%u: Booted secondary processor\n", cpu);
+
+	cpu_init();
 	preempt_disable();
 	trace_hardirqs_off();
 
@@ -320,10 +323,9 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	/*
 	 * OK, now it's safe to let the boot CPU continue.  Wait for
 	 * the CPU migration code to notice that the CPU is online
-	 * before we continue - which happens after __cpu_up returns.
+	 * before we continue.
 	 */
 	set_cpu_online(cpu, true);
-	complete(&cpu_running);
 
 	/*
 	 * Setup the percpu timer for this CPU.
@@ -356,7 +358,6 @@ void __init smp_cpus_done(unsigned int max_cpus)
 
 void __init smp_prepare_boot_cpu(void)
 {
-	set_my_cpu_offset(per_cpu_offset(smp_processor_id()));
 	unsigned int cpu = smp_processor_id();
 
 	per_cpu(cpu_data, cpu).idle = current;
@@ -365,8 +366,6 @@ void __init smp_prepare_boot_cpu(void)
 void __init smp_prepare_cpus(unsigned int max_cpus)
 {
 	unsigned int ncores = num_possible_cpus();
-
-	init_cpu_topology();
 
 	smp_store_cpu_info(smp_processor_id());
 
@@ -696,9 +695,9 @@ void smp_send_stop(void)
 	}
 
 	/* Wait up to one second for other CPUs to stop */
-	timeout =  MSEC_PER_SEC;
-	while (num_active_cpus() > 1 && timeout--)
-		mdelay(1);
+	timeout = USEC_PER_SEC;
+	while (num_online_cpus() > 1 && timeout--)
+		udelay(1);
 
 	if (num_online_cpus() > 1)
 		pr_warning("SMP: failed to stop secondary CPUs\n");

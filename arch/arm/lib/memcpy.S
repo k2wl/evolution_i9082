@@ -1,58 +1,63 @@
 /*
-Copyright (c) 2013, Raspberry Pi Foundation
-Copyright (c) 2013, RISC OS Open Ltd
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of the copyright holder nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-
-#include "arm-mem.h"
-#include "memcpymove.h"
-
-/* Prevent the stack from becoming executable */
-#if defined(__linux__) && defined(__ELF__)
-.section .note.GNU-stack,"",%progbits
-#endif
-
-    .text
-    .arch armv6
-    .object_arch armv4
-    .arm
-    .altmacro
-    .p2align 2
-
-/*
- * void *memcpy(void * restrict s1, const void * restrict s2, size_t n);
- * On entry:
- * a1 = pointer to destination
- * a2 = pointer to source
- * a3 = number of bytes to copy
- * On exit:
- * a1 preserved
+ *  linux/arch/arm/lib/memcpy.S
+ *
+ *  Author:	Nicolas Pitre
+ *  Created:	Sep 28, 2005
+ *  Copyright:	MontaVista Software, Inc.
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License version 2 as
+ *  published by the Free Software Foundation.
  */
 
-.set prefetch_distance, 3
+#include <linux/linkage.h>
+#include <asm/assembler.h>
 
-myfunc memcpy
-        memcpy  0
-.endfunc
+#define LDR1W_SHIFT	0
+#define STR1W_SHIFT	0
+
+	.macro ldr1w ptr reg abort
+	W(ldr) \reg, [\ptr], #4
+	.endm
+
+	.macro ldr4w ptr reg1 reg2 reg3 reg4 abort
+	ldmia \ptr!, {\reg1, \reg2, \reg3, \reg4}
+	.endm
+
+	.macro ldr8w ptr reg1 reg2 reg3 reg4 reg5 reg6 reg7 reg8 abort
+	ldmia \ptr!, {\reg1, \reg2, \reg3, \reg4, \reg5, \reg6, \reg7, \reg8}
+	.endm
+
+	.macro ldr1b ptr reg cond=al abort
+	ldr\cond\()b \reg, [\ptr], #1
+	.endm
+
+	.macro str1w ptr reg abort
+	W(str) \reg, [\ptr], #4
+	.endm
+
+	.macro str8w ptr reg1 reg2 reg3 reg4 reg5 reg6 reg7 reg8 abort
+	stmia \ptr!, {\reg1, \reg2, \reg3, \reg4, \reg5, \reg6, \reg7, \reg8}
+	.endm
+
+	.macro str1b ptr reg cond=al abort
+	str\cond\()b \reg, [\ptr], #1
+	.endm
+
+	.macro enter reg1 reg2
+	stmdb sp!, {r0, \reg1, \reg2}
+	.endm
+
+	.macro exit reg1 reg2
+	ldmfd sp!, {r0, \reg1, \reg2}
+	.endm
+
+	.text
+
+/* Prototype: void *memcpy(void *dest, const void *src, size_t n); */
+
+ENTRY(memcpy)
+
+#include "copy_template.S"
+
+ENDPROC(memcpy)

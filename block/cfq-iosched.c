@@ -21,18 +21,18 @@
  * tunables
  */
 /* max queue in one round of service */
-static const int cfq_quantum = 4;
-static const int cfq_fifo_expire[2] = { 43, 11 };
+static const int cfq_quantum = 8;
+static const int cfq_fifo_expire[2] = { HZ / 4, HZ / 8 };
 /* maximum backwards seek, in KiB */
-static const int cfq_back_max = 12582912;
+static const int cfq_back_max = 16 * 1024;
 /* penalty of a backwards seek */
-static const int cfq_back_penalty = 1;
-static const int cfq_slice_sync = 8;
-static int cfq_slice_async = 7;
+static const int cfq_back_penalty = 2;
+static const int cfq_slice_sync = HZ / 10;
+static int cfq_slice_async = HZ / 25;
 static const int cfq_slice_async_rq = 2;
-static int cfq_slice_idle = 0;
-static int cfq_group_idle = 0;
-static const int cfq_target_latency = 300; /* 300 ms */
+static int cfq_slice_idle = HZ / 125;
+static int cfq_group_idle = HZ / 125;
+static const int cfq_target_latency = HZ * 3/10; /* 300 ms */
 static const int cfq_hist_divisor = 4;
 
 /*
@@ -295,7 +295,6 @@ struct cfq_data {
 	unsigned int cfq_slice_idle;
 	unsigned int cfq_group_idle;
 	unsigned int cfq_latency;
-	unsigned int cfq_target_latency;
 
 	/*
 	 * Fallback dummy cfqq for extreme OOM conditions
@@ -605,7 +604,7 @@ cfq_group_slice(struct cfq_data *cfqd, struct cfq_group *cfqg)
 {
 	struct cfq_rb_root *st = &cfqd->grp_service_tree;
 
-	return cfqd->cfq_target_latency * cfqg->weight / st->total_weight;
+	return cfq_target_latency * cfqg->weight / st->total_weight;
 }
 
 static inline unsigned
@@ -2260,8 +2259,7 @@ new_workload:
 		 * to have higher weight. A more accurate thing would be to
 		 * calculate system wide asnc/sync ratio.
 		 */
-		tmp = cfqd->cfq_target_latency *
-			cfqg_busy_async_queues(cfqd, cfqg);
+		tmp = cfq_target_latency * cfqg_busy_async_queues(cfqd, cfqg);
 		tmp = tmp/cfqd->busy_queues;
 		slice = min_t(unsigned, slice, tmp);
 
@@ -3786,7 +3784,6 @@ static void *cfq_init_queue(struct request_queue *q)
 	cfqd->cfq_back_penalty = cfq_back_penalty;
 	cfqd->cfq_slice[0] = cfq_slice_async;
 	cfqd->cfq_slice[1] = cfq_slice_sync;
-	cfqd->cfq_target_latency = cfq_target_latency;	
 	cfqd->cfq_slice_async_rq = cfq_slice_async_rq;
 	cfqd->cfq_slice_idle = cfq_slice_idle;
 	cfqd->cfq_group_idle = cfq_group_idle;
@@ -3838,7 +3835,6 @@ SHOW_FUNCTION(cfq_slice_sync_show, cfqd->cfq_slice[1], 1);
 SHOW_FUNCTION(cfq_slice_async_show, cfqd->cfq_slice[0], 1);
 SHOW_FUNCTION(cfq_slice_async_rq_show, cfqd->cfq_slice_async_rq, 0);
 SHOW_FUNCTION(cfq_low_latency_show, cfqd->cfq_latency, 0);
-SHOW_FUNCTION(cfq_target_latency_show, cfqd->cfq_target_latency, 1);
 #undef SHOW_FUNCTION
 
 #define STORE_FUNCTION(__FUNC, __PTR, MIN, MAX, __CONV)			\
@@ -3872,7 +3868,6 @@ STORE_FUNCTION(cfq_slice_async_store, &cfqd->cfq_slice[0], 1, UINT_MAX, 1);
 STORE_FUNCTION(cfq_slice_async_rq_store, &cfqd->cfq_slice_async_rq, 1,
 		UINT_MAX, 0);
 STORE_FUNCTION(cfq_low_latency_store, &cfqd->cfq_latency, 0, 1, 0);
-STORE_FUNCTION(cfq_target_latency_store, &cfqd->cfq_target_latency, 1, UINT_MAX, 1);
 #undef STORE_FUNCTION
 
 #define CFQ_ATTR(name) \
@@ -3890,7 +3885,6 @@ static struct elv_fs_entry cfq_attrs[] = {
 	CFQ_ATTR(slice_idle),
 	CFQ_ATTR(group_idle),
 	CFQ_ATTR(low_latency),
-	CFQ_ATTR(target_latency),
 	__ATTR_NULL
 };
 
@@ -3937,10 +3931,24 @@ static struct blkio_policy_type blkio_policy_cfq;
 
 static int __init cfq_init(void)
 {
-    int ret;
+	int ret;
 
-    cfq_pool = KMEM_CACHE(cfq_queue, 0);
-    if (!cfq_pool)
+	/*
+	 * could be 0 on HZ < 1000 setups
+	 */
+	if (!cfq_slice_async)
+		cfq_slice_async = 1;
+	if (!cfq_slice_idle)
+		cfq_slice_idle = 1;
+
+#ifdef CONFIG_CFQ_GROUP_IOSCHED
+	if (!cfq_group_idle)
+		cfq_group_idle = 1;
+#else
+		cfq_group_idle = 0;
+#endif
+	cfq_pool = KMEM_CACHE(cfq_queue, 0);
+	if (!cfq_pool)
 		return -ENOMEM;
 
 	ret = elv_register(&iosched_cfq);

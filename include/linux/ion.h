@@ -87,17 +87,6 @@ struct ion_platform_data {
 };
 
 /**
- * ion_reserve() - reserve memory for ion heaps if applicable
- * @data:	platform data specifying starting physical address and
- *		size
- *
- * Calls memblock reserve to set aside memory for heaps that are
- * located at specific memory addresses or of specfic sizes not
- * managed by the kernel
- */
-void ion_reserve(struct ion_platform_data *data);
-
-/**
  * ion_client_create() -  allocate a client and returns it
  * @dev:	the global ion device
  * @heap_mask:	mask of heaps this client can allocate from
@@ -180,10 +169,10 @@ void ion_unmap_kernel(struct ion_client *client, struct ion_handle *handle);
  * @client:	the client
  * @handle:	handle to map
  *
- * Return an sg_table describing the given handle
+ * Return an sglist describing the given handle
  */
-struct sg_table *ion_map_dma(struct ion_client *client,
-			     struct ion_handle *handle);
+struct scatterlist *ion_map_dma(struct ion_client *client,
+				struct ion_handle *handle);
 
 /**
  * ion_unmap_dma() - destroy a dma mapping for a handle

@@ -26,7 +26,7 @@
 
 /*
  * Targeted preemption latency for CPU-bound tasks:
- * (default: 3ms * (1 + ilog(ncpus)), units: nanoseconds)
+ * (default: 6ms * (1 + ilog(ncpus)), units: nanoseconds)
  *
  * NOTE: this latency value is not the same as the concept of
  * 'timeslice length' - timeslices in CFS are of variable length
@@ -36,8 +36,8 @@
  * (to see the precise effective timeslice length of your workload,
  *  run vmstat and monitor the context-switches (cs) field)
  */
-unsigned int sysctl_sched_latency = 3000000ULL;
-unsigned int normalized_sysctl_sched_latency = 3000000ULL;
+unsigned int sysctl_sched_latency = 6000000ULL;
+unsigned int normalized_sysctl_sched_latency = 6000000ULL;
 
 /*
  * The initial- and re-scaling of tunables is configurable
@@ -89,23 +89,7 @@ const_debug unsigned int sysctl_sched_migration_cost = 500000UL;
  */
 unsigned int __read_mostly sysctl_sched_shares_window = 10000000UL;
 
-#ifdef CONFIG_CFS_BANDWIDTH
-/*
- * Amount of runtime to allocate from global (tg) to local (per-cfs_rq) pool
- * each time a cfs_rq requests quota.
- *
- * Note: in the case that the slice exceeds the runtime remaining (either due
- * to consumption or the quota being specified to be smaller than the slice)
- * we will always only issue the remaining available time.
- *
- * default: 5 msec, units: microseconds
-  */
-unsigned int sysctl_sched_cfs_bandwidth_slice = 5000UL;
-#endif
-
 static const struct sched_class fair_sched_class;
-
-static unsigned long __read_mostly max_load_balance_interval = HZ/10;
 
 /**************************************************************
  * CFS operations on generic schedulable entities:
@@ -321,8 +305,6 @@ find_matching_se(struct sched_entity **se, struct sched_entity **pse)
 
 #endif	/* CONFIG_FAIR_GROUP_SCHED */
 
-static void account_cfs_rq_runtime(struct cfs_rq *cfs_rq,
-				   unsigned long delta_exec);
 
 /**************************************************************
  * Scheduling class tree data structure manipulation methods:
@@ -620,8 +602,6 @@ static void update_curr(struct cfs_rq *cfs_rq)
 		cpuacct_charge(curtask, delta_exec);
 		account_group_exec_runtime(curtask, delta_exec);
 	}
-
-	account_cfs_rq_runtime(cfs_rq, delta_exec);
 }
 
 static inline void
@@ -1275,74 +1255,6 @@ entity_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr, int queued)
 	if (cfs_rq->nr_running > 1 || !sched_feat(WAKEUP_PREEMPT))
 		check_preempt_tick(cfs_rq, curr);
 }
-
-
-/**************************************************
- * CFS bandwidth control machinery
- */
-
-#ifdef CONFIG_CFS_BANDWIDTH
-/*
- * default period for cfs group bandwidth.
- * default: 0.1s, units: nanoseconds
- */
-static inline u64 default_cfs_period(void)
-{
-	return 100000000ULL;
-}
-
-static inline u64 sched_cfs_bandwidth_slice(void)
-{
-	return (u64)sysctl_sched_cfs_bandwidth_slice * NSEC_PER_USEC;
-}
-
-static void assign_cfs_rq_runtime(struct cfs_rq *cfs_rq)
-{
-	struct task_group *tg = cfs_rq->tg;
-	struct cfs_bandwidth *cfs_b = tg_cfs_bandwidth(tg);
-	u64 amount = 0, min_amount;
-
-	/* note: this is a positive sum as runtime_remaining <= 0 */
-	min_amount = sched_cfs_bandwidth_slice() - cfs_rq->runtime_remaining;
-
-	raw_spin_lock(&cfs_b->lock);
-	if (cfs_b->quota == RUNTIME_INF)
-		amount = min_amount;
-	else if (cfs_b->runtime > 0) {
-		amount = min(cfs_b->runtime, min_amount);
-		cfs_b->runtime -= amount;
-	}
-	raw_spin_unlock(&cfs_b->lock);
-
-	cfs_rq->runtime_remaining += amount;
-}
-
-static void __account_cfs_rq_runtime(struct cfs_rq *cfs_rq,
-				     unsigned long delta_exec)
-{
-	if (!cfs_rq->runtime_enabled)
-		return;
-
-	cfs_rq->runtime_remaining -= delta_exec;
-	if (cfs_rq->runtime_remaining > 0)
-		return;
-
-	assign_cfs_rq_runtime(cfs_rq);
-}
-
-static __always_inline void account_cfs_rq_runtime(struct cfs_rq *cfs_rq,
-						   unsigned long delta_exec)
-{
-	if (!cfs_rq->runtime_enabled)
-		return;
-
-	__account_cfs_rq_runtime(cfs_rq, delta_exec);
-}
-
-#else
-static void account_cfs_rq_runtime(struct cfs_rq *cfs_rq,
-				     unsigned long delta_exec) {}
-#endif
 
 /**************************************************
  * CFS operations on tasks:
@@ -2747,11 +2659,6 @@ static void update_group_power(struct sched_domain *sd, int cpu)
 	struct sched_domain *child = sd->child;
 	struct sched_group *group, *sdg = sd->groups;
 	unsigned long power;
-	unsigned long interval;
-
-	interval = msecs_to_jiffies(sd->balance_interval);
-	interval = clamp(interval, 1UL, max_load_balance_interval);
-	sdg->sgp->next_update = jiffies + interval;
 
 	if (!child) {
 		update_cpu_power(sd, cpu);
@@ -2812,8 +2719,7 @@ static inline void update_sg_lb_stats(struct sched_domain *sd,
 			int local_group, const struct cpumask *cpus,
 			int *balance, struct sg_lb_stats *sgs)
 {
-	unsigned long nr_running, max_nr_running, min_nr_running;
-	unsigned long load, max_cpu_load, min_cpu_load;	
+	unsigned long load, max_cpu_load, min_cpu_load, max_nr_running;
 	int i;
 	unsigned int balance_cpu = -1, first_idle_cpu = 0;
 	unsigned long avg_load_per_task = 0;
@@ -2825,12 +2731,9 @@ static inline void update_sg_lb_stats(struct sched_domain *sd,
 	max_cpu_load = 0;
 	min_cpu_load = ~0UL;
 	max_nr_running = 0;
-	min_nr_running = ~0UL;
 
 	for_each_cpu_and(i, sched_group_cpus(group), cpus) {
 		struct rq *rq = cpu_rq(i);
-
-		nr_running = rq->nr_running;
 
 		/* Bias balancing toward cpus of our domain */
 		if (local_group) {
@@ -2842,19 +2745,16 @@ static inline void update_sg_lb_stats(struct sched_domain *sd,
 			load = target_load(i, load_idx);
 		} else {
 			load = source_load(i, load_idx);
-			if (load > max_cpu_load)
+			if (load > max_cpu_load) {
 				max_cpu_load = load;
+				max_nr_running = rq->nr_running;
+			}
 			if (min_cpu_load > load)
 				min_cpu_load = load;
-
-			if (nr_running > max_nr_running)
-				max_nr_running = nr_running;
-			if (min_nr_running > nr_running)
-				min_nr_running = nr_running;
 		}
 
 		sgs->group_load += load;
-		sgs->sum_nr_running += nr_running;
+		sgs->sum_nr_running += rq->nr_running;
 		sgs->sum_weighted_load += weighted_cpuload(i);
 		if (idle_cpu(i))
 			sgs->idle_cpus++;
@@ -2866,15 +2766,12 @@ static inline void update_sg_lb_stats(struct sched_domain *sd,
 	 * domains. In the newly idle case, we will allow all the cpu's
 	 * to do the newly idle load balance.
 	 */
-	if (local_group) {
-		if (idle != CPU_NEWLY_IDLE) {
-			if (balance_cpu != this_cpu) {
-				*balance = 0;
-				return;
-			}
-			update_group_power(sd, this_cpu);
-		} else if (time_after_eq(jiffies, group->sgp->next_update))
-			update_group_power(sd, this_cpu);
+	if (idle != CPU_NEWLY_IDLE && local_group) {
+		if (balance_cpu != this_cpu) {
+			*balance = 0;
+			return;
+		}
+		update_group_power(sd, this_cpu);
 	}
 
 	/* Adjust by relative CPU power of the group */
@@ -2892,8 +2789,7 @@ static inline void update_sg_lb_stats(struct sched_domain *sd,
 	if (sgs->sum_nr_running)
 		avg_load_per_task = sgs->sum_weighted_load / sgs->sum_nr_running;
 
-	if ((max_cpu_load - min_cpu_load) >= avg_load_per_task &&
-			(max_nr_running - min_nr_running) > 1)	
+	if ((max_cpu_load - min_cpu_load) >= avg_load_per_task && max_nr_running > 1)
 		sgs->group_imb = 1;
 
 	sgs->group_capacity = DIV_ROUND_CLOSEST(group->sgp->power,
@@ -3987,6 +3883,8 @@ void select_nohz_load_balancer(int stop_tick)
 
 static DEFINE_SPINLOCK(balancing);
 
+static unsigned long __read_mostly max_load_balance_interval = HZ/10;
+
 /*
  * Scale the max load_balance interval with the number of CPUs in the system.
  * This trades load-balance latency on larger machines for less cross talk.
@@ -4083,10 +3981,8 @@ static void nohz_idle_balance(int this_cpu, enum cpu_idle_type idle)
 	struct rq *rq;
 	int balance_cpu;
 
-	if (idle != CPU_IDLE || !this_rq->nohz_balance_kick) {
-		this_rq->nohz_balance_kick = 0;
+	if (idle != CPU_IDLE || !this_rq->nohz_balance_kick)
 		return;
-	}
 
 	for_each_cpu(balance_cpu, nohz.idle_cpus_mask) {
 		if (balance_cpu == this_cpu)
@@ -4313,15 +4209,15 @@ static void switched_from_fair(struct rq *rq, struct task_struct *p)
 	struct cfs_rq *cfs_rq = cfs_rq_of(se);
 
 	/*
-	 * Ensure the task's vruntime is normalized, so that when it's
+	 * Ensure the task's vruntime is normalized, so that when its
 	 * switched back to the fair class the enqueue_entity(.flags=0) will
 	 * do the right thing.
 	 *
-	 * If it's on_rq, then the dequeue_entity(.flags=0) will already
-	 * have normalized the vruntime, if it's !on_rq, then only when
+	 * If it was on_rq, then the dequeue_entity(.flags=0) will already
+	 * have normalized the vruntime, if it was !on_rq, then only when
 	 * the task is sleeping will it still have non-normalized vruntime.
 	 */
-	if (!p->on_rq && p->state != TASK_RUNNING) {
+	if (!se->on_rq && p->state != TASK_RUNNING) {
 		/*
 		 * Fix up our vruntime so that the current sleep doesn't
 		 * cause 'unlimited' sleep bonus.
@@ -4359,13 +4255,8 @@ static void set_curr_task_fair(struct rq *rq)
 {
 	struct sched_entity *se = &rq->curr->se;
 
-	for_each_sched_entity(se) {
-		struct cfs_rq *cfs_rq = cfs_rq_of(se);
-
-		set_next_entity(cfs_rq, se);
-		/* ensure bandwidth has been allocated on our new cfs_rq */
-		account_cfs_rq_runtime(cfs_rq, 0);
-	}
+	for_each_sched_entity(se)
+		set_next_entity(cfs_rq_of(se), se);
 }
 
 #ifdef CONFIG_FAIR_GROUP_SCHED

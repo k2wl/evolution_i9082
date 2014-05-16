@@ -418,39 +418,10 @@ out:
 	return error;
 }
 
-static bool is_chrooted(struct fs_struct *fs)
-{
-	bool ret;
-
-	/*
-	 * This is equivalent to checking whether "/.." is the same
-	 * directory as "/", where the ".." part ignores the current
-	 * root.  This logic is the same as follow_dotdot except that we
-	 * ignore fs->root and we don't need to follow the final
-	 * mountpoint we end up on.
-	 */
-	struct path path = fs->root;
-	path_get(&path);
-	while (true) {
-		if (path.dentry != path.mnt->mnt_root) {
-			ret = true;  /* .. moves up within a vfsmount. */
-			break;
-		}
-
-		if (!follow_up(&path)) {
-			ret = false;  /* We've hit the real root. */
-			break;
-		}
-	}
-	path_put(&path);
-	return ret;
-}
-
 SYSCALL_DEFINE1(chroot, const char __user *, filename)
 {
 	struct path path;
 	int error;
-	struct fs_struct *fs = current->fs;
 
 	error = user_path_dir(filename, &path);
 	if (error)
@@ -461,26 +432,13 @@ SYSCALL_DEFINE1(chroot, const char __user *, filename)
 		goto dput_and_out;
 
 	error = -EPERM;
-	/*
-	 * Chroot is dangerous unless no_new_privs is set, and we also
-	 * don't want to allow unprivileged users to break out of chroot
-	 * jail with another chroot call.
-	 *
-	 * We therefore allow chroot under one of two circumstances:
-	 *  a) no_new_privs (so setuid and similar programs can't be
-	 *     exploited), fs not shared (to avoid bypassing no_new_privs),
-	 *     and not already chrooted (so there's no chroot jail to break
-	 *     out of)
-	 *  b) CAP_SYS_CHROOT
-	 */
-	if (!(current->no_new_privs && fs->users == 1 && !is_chrooted(fs)) &&
-	    !capable(CAP_SYS_CHROOT))
+	if (!capable(CAP_SYS_CHROOT))
 		goto dput_and_out;
 	error = security_path_chroot(&path);
 	if (error)
 		goto dput_and_out;
 
-	set_fs_root(fs, &path);
+	set_fs_root(current->fs, &path);
 	error = 0;
 dput_and_out:
 	path_put(&path);
@@ -924,8 +882,9 @@ EXPORT_SYMBOL(put_unused_fd);
  * will follow.
  */
 
-void __fd_install(struct files_struct *files, unsigned int fd, struct file *file)
+void fd_install(unsigned int fd, struct file *file)
 {
+	struct files_struct *files = current->files;
 	struct fdtable *fdt;
 	spin_lock(&files->file_lock);
 	fdt = files_fdtable(files);
@@ -934,37 +893,7 @@ void __fd_install(struct files_struct *files, unsigned int fd, struct file *file
 	spin_unlock(&files->file_lock);
 }
 
-void fd_install(unsigned int fd, struct file *file)
-{
-	__fd_install(current->files, fd, file);
-}
 EXPORT_SYMBOL(fd_install);
-
-/*
- * The same warnings as for __alloc_fd()/__fd_install() apply here...
- */
-int __close_fd(struct files_struct *files, unsigned fd)
-{
-	struct file *file;
-	struct fdtable *fdt;
-
-	spin_lock(&files->file_lock);
-	fdt = files_fdtable(files);
-	if (fd >= fdt->max_fds)
-		goto out_unlock;
-	file = fdt->fd[fd];
-	if (!file)
-		goto out_unlock;
-	rcu_assign_pointer(fdt->fd[fd], NULL);
-	FD_SET(fd, fdt->close_on_exec);
-	__put_unused_fd(files, fd);
-	spin_unlock(&files->file_lock);
-	return filp_close(file, files);
-
-out_unlock:
-	spin_unlock(&files->file_lock);
-	return -EBADF;
-}
 
 static inline int build_open_flags(int flags, int mode, struct open_flags *op)
 {

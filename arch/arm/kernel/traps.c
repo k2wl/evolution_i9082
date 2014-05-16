@@ -25,9 +25,8 @@
 #include <linux/delay.h>
 #include <linux/init.h>
 #include <linux/sched.h>
-#include <linux/slab.h>
 
-#include <linux/atomic.h>
+#include <asm/atomic.h>
 #include <asm/cacheflush.h>
 #include <asm/system.h>
 #include <asm/unistd.h>
@@ -284,7 +283,6 @@ void die(const char *str, struct pt_regs *regs, int err)
 	spin_lock_irq(&die_lock);
 	console_verbose();
 	bust_spinlocks(1);
-
 #ifdef CONFIG_BCM_KNLLOG_SUPPORT
 	local_irq_disable();
 	knllog_dump();
@@ -293,7 +291,6 @@ void die(const char *str, struct pt_regs *regs, int err)
 		bug_type = report_bug(regs->ARM_pc, regs);
 	if (bug_type != BUG_TRAP_TYPE_NONE)
 		str = "Oops - BUG";
-
 	ret = __die(str, err, thread, regs);
 
 	if (regs && kexec_should_crash(thread->task))
@@ -477,43 +474,28 @@ static int bad_syscall(int n, struct pt_regs *regs)
 	return regs->ARM_r0;
 }
 
-static inline int
+static inline void
 do_cache_op(unsigned long start, unsigned long end, int flags)
 {
+	struct mm_struct *mm = current->active_mm;
+	struct vm_area_struct *vma;
+
 	if (end < start || flags)
-		return -EINVAL;
-	return flush_cache_user_range(start, end);
-}
+		return;
 
-static inline int
-do_cache_op_iov(const struct iovec __user *uiov, unsigned long cnt, int flags)
-{
-	int i, ret = 0;
-	unsigned long len = cnt * sizeof(struct iovec);
-	struct iovec *iov = kmalloc(len, GFP_KERNEL);
+	down_read(&mm->mmap_sem);
+	vma = find_vma(mm, start);
+	if (vma && vma->vm_start < end) {
+		if (start < vma->vm_start)
+			start = vma->vm_start;
+		if (end > vma->vm_end)
+			end = vma->vm_end;
 
-	if (iov == NULL) {
-		ret = -ENOMEM;
-		goto out;
+		up_read(&mm->mmap_sem);
+		flush_cache_user_range(start, end);
+		return;
 	}
-
-	if (copy_from_user(iov, uiov, len)) {
-		ret = -EFAULT;
-		goto out_free;
-	}
-
-	for (i = 0; i < cnt; ++i) {
-		unsigned long start = (unsigned long __force)iov[i].iov_base;
-		unsigned long end = start + iov[i].iov_len;
-		ret = do_cache_op(start, end, flags);
-		if (ret)
-			break;
-	}
-
-out_free:
-	kfree(iov);
-out:
-	return ret;
+	up_read(&mm->mmap_sem);
 }
 
 /*
@@ -559,12 +541,8 @@ asmlinkage int arm_syscall(int no, struct pt_regs *regs)
 	 * the specified region).
 	 */
 	case NR(cacheflush):
-		return do_cache_op(regs->ARM_r0, regs->ARM_r1, regs->ARM_r2);
+		do_cache_op(regs->ARM_r0, regs->ARM_r1, regs->ARM_r2);
 		return 0;
-
-	case NR(cacheflush_iov):
-		return do_cache_op_iov((const struct iovec __user *)regs->ARM_r0,
-					regs->ARM_r1, regs->ARM_r2);
 
 	case NR(usr26):
 		if (!(elf_hwcap & HWCAP_26BIT))

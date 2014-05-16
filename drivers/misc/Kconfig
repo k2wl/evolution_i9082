@@ -806,14 +806,6 @@ config BCM_BT_LPM
 	help
 	  This driver adds Low Power mode support for Broadcom bluetooth
 
-config BCM_BT_INVERSE_POLARITY
-	bool "BCM_BT_LPM inversed polarity"
-	default n
-	help
-	  Inverse the on/off polaritys for the bcm_bt_lpm driver. It is 
-	  needed to get the kernel driver working correctly with some
-	  system-side implementations. 
-
 config RECOVERY
    bool "Android Recovery Support"
    depends on ARCH_KONA
@@ -839,11 +831,5 @@ source "drivers/misc/carma/Kconfig"
 source "drivers/misc/vc04_services/Kconfig"
 source "drivers/misc/emmc_rpmb/Kconfig"
 source "drivers/misc/modem_if/Kconfig"
-
-config TOUCH_WAKE
-	bool "Support for Touch Wake"
-	default y
-	help
-	  Say Y here to enable Touch Wake
 
 endif # MISC_DEVICES

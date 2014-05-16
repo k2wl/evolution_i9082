@@ -40,7 +40,6 @@ struct wb_writeback_work {
 	unsigned int for_kupdate:1;
 	unsigned int range_cyclic:1;
 	unsigned int for_background:1;
-	unsigned int for_sync:1;	/* sync(2) WB_SYNC_ALL writeback */
 
 	struct list_head list;		/* pending work list */
 	struct completion *done;	/* set if the caller waits */
@@ -392,11 +391,9 @@ writeback_single_inode(struct inode *inode, struct writeback_control *wbc)
 	/*
 	 * Make sure to wait on the data before writing out the metadata.
 	 * This is important for filesystems that modify metadata on data
-	 * I/O completion. We don't do it for sync(2) writeback because it has a
-	 * separate, external IO completion path and ->sync_fs for guaranteeing
-	 * inode metadata is written back correctly.
+	 * I/O completion.
 	 */
-	if (wbc->sync_mode == WB_SYNC_ALL && !wbc->for_sync) {
+	if (wbc->sync_mode == WB_SYNC_ALL) {
 		int err = filemap_fdatawait(mapping);
 		if (ret == 0)
 			ret = err;
@@ -633,16 +630,14 @@ static void __writeback_inodes_sb(struct super_block *sb,
  */
 #define MAX_WRITEBACK_PAGES     1024
 
-static inline bool over_bground_thresh(struct backing_dev_info *bdi)
+static inline bool over_bground_thresh(void)
 {
 	unsigned long background_thresh, dirty_thresh;
 
 	global_dirty_limits(&background_thresh, &dirty_thresh);
 
-	if (bdi_stat(bdi, BDI_RECLAIMABLE) >
-				bdi_dirty_limit(bdi, background_thresh))
-		return true;
-	return false;
+	return (global_page_state(NR_FILE_DIRTY) +
+		global_page_state(NR_UNSTABLE_NFS) > background_thresh);
 }
 
 /*
@@ -669,7 +664,6 @@ static long wb_writeback(struct bdi_writeback *wb,
 		.older_than_this	= NULL,
 		.for_kupdate		= work->for_kupdate,
 		.for_background		= work->for_background,
-		.for_sync		= work->for_sync,
 		.range_cyclic		= work->range_cyclic,
 	};
 	unsigned long oldest_jif;
@@ -725,7 +719,7 @@ static long wb_writeback(struct bdi_writeback *wb,
 		 * For background writeout, stop when we are below the
 		 * background dirty threshold
 		 */
-		if (work->for_background && !over_bground_thresh(wb->bdi))
+		if (work->for_background && !over_bground_thresh())
 			break;
 
 		wbc.more_io = 0;
@@ -807,7 +801,7 @@ static unsigned long get_nr_dirty_pages(void)
 
 static long wb_check_background_flush(struct bdi_writeback *wb)
 {
-	if (over_bground_thresh(wb->bdi)) {
+	if (over_bground_thresh()) {
 
 		struct wb_writeback_work work = {
 			.nr_pages	= LONG_MAX,
@@ -969,8 +963,10 @@ void wakeup_flusher_threads(long nr_pages)
 {
 	struct backing_dev_info *bdi;
 
-	if (!nr_pages)
-		nr_pages = get_nr_dirty_pages();
+	if (!nr_pages) {
+		nr_pages = global_page_state(NR_FILE_DIRTY) +
+				global_page_state(NR_UNSTABLE_NFS);
+	}
 
 	rcu_read_lock();
 	list_for_each_entry_rcu(bdi, &bdi_list, bdi_list) {
@@ -1284,7 +1280,6 @@ void sync_inodes_sb(struct super_block *sb)
 		.nr_pages	= LONG_MAX,
 		.range_cyclic	= 0,
 		.done		= &done,
-		.for_sync	= 1,
 	};
 
 	WARN_ON(!rwsem_is_locked(&sb->s_umount));

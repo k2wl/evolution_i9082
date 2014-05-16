@@ -790,7 +790,7 @@ static int find_node(unsigned long addr)
 	return -1;
 }
 
-static u64 memblock_nid_range(u64 start, u64 end, int *nid)
+u64 memblock_nid_range(u64 start, u64 end, int *nid)
 {
 	*nid = find_node(start);
 	start += PAGE_SIZE;
@@ -808,7 +808,7 @@ static u64 memblock_nid_range(u64 start, u64 end, int *nid)
 	return start;
 }
 #else
-static u64 memblock_nid_range(u64 start, u64 end, int *nid)
+u64 memblock_nid_range(u64 start, u64 end, int *nid)
 {
 	*nid = 0;
 	return end;

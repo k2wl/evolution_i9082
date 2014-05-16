@@ -585,10 +585,11 @@ int lru_add_drain_all(void)
 void release_pages(struct page **pages, int nr, int cold)
 {
 	int i;
-	LIST_HEAD(pages_to_free);
+	struct pagevec pages_to_free;
 	struct zone *zone = NULL;
 	unsigned long uninitialized_var(flags);
 
+	pagevec_init(&pages_to_free, cold);
 	for (i = 0; i < nr; i++) {
 		struct page *page = pages[i];
 
@@ -619,12 +620,19 @@ void release_pages(struct page **pages, int nr, int cold)
 			del_page_from_lru(zone, page);
 		}
 
-		list_add(&page->lru, &pages_to_free);
+		if (!pagevec_add(&pages_to_free, page)) {
+			if (zone) {
+				spin_unlock_irqrestore(&zone->lru_lock, flags);
+				zone = NULL;
+			}
+			__pagevec_free(&pages_to_free);
+			pagevec_reinit(&pages_to_free);
+  		}
 	}
 	if (zone)
 		spin_unlock_irqrestore(&zone->lru_lock, flags);
 
-	free_hot_cold_page_list(&pages_to_free, cold);
+	pagevec_free(&pages_to_free);
 }
 EXPORT_SYMBOL(release_pages);
 
@@ -651,7 +659,7 @@ EXPORT_SYMBOL(__pagevec_release);
 void lru_add_page_tail(struct zone* zone,
 		       struct page *page, struct page *page_tail)
 {
-	int uninitialized_var(active);
+	int active;
 	enum lru_list lru;
 	const int file = 0;
 	struct list_head *head;
@@ -682,9 +690,6 @@ void lru_add_page_tail(struct zone* zone,
 		SetPageUnevictable(page_tail);
 		add_page_to_lru_list(zone, page_tail, LRU_UNEVICTABLE);
 	}
-
-	if (!PageUnevictable(page))
-		update_page_reclaim_stat(zone, page_tail, file, active);
 }
 
 static void ____pagevec_lru_add_fn(struct page *page, void *arg)
@@ -701,8 +706,8 @@ static void ____pagevec_lru_add_fn(struct page *page, void *arg)
 	SetPageLRU(page);
 	if (active)
 		SetPageActive(page);
-	add_page_to_lru_list(zone, page, lru);
 	update_page_reclaim_stat(zone, page, file, active);
+	add_page_to_lru_list(zone, page, lru);
 }
 
 /*

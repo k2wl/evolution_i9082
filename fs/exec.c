@@ -60,8 +60,6 @@
 #include <asm/uaccess.h>
 #include <asm/mmu_context.h>
 #include <asm/tlb.h>
-
-#include <trace/events/task.h>
 #include "internal.h"
 
 int core_uses_pid;
@@ -1059,8 +1057,6 @@ void set_task_comm(struct task_struct *tsk, char *buf)
 {
 	task_lock(tsk);
 
-	trace_task_rename(tsk, buf);
-
 	/*
 	 * Threads may access current->comm without holding
 	 * the task lock, so write the string carefully.
@@ -1249,13 +1245,6 @@ int check_unsafe_exec(struct linux_binprm *bprm)
 
 	bprm->unsafe = tracehook_unsafe_exec(p);
 
-	/*
-	 * This isn't strictly necessary, but it makes it harder for LSMs to
-	 * mess up.
-	 */
-	if (current->no_new_privs)
-		bprm->unsafe |= LSM_UNSAFE_NO_NEW_PRIVS;
-
 	n_fs = 1;
 	spin_lock(&p->fs->lock);
 	rcu_read_lock();
@@ -1299,8 +1288,7 @@ int prepare_binprm(struct linux_binprm *bprm)
 	bprm->cred->euid = current_euid();
 	bprm->cred->egid = current_egid();
 
-	if (!(bprm->file->f_path.mnt->mnt_flags & MNT_NOSUID) &&
-	    !current->no_new_privs) {
+	if (!(bprm->file->f_path.mnt->mnt_flags & MNT_NOSUID)) {
 		/* Set-uid? */
 		if (mode & S_ISUID) {
 			bprm->per_clear |= PER_CLEAR_ON_SETID;

@@ -1613,10 +1613,9 @@ struct inode_operations {
 struct seq_file;
 
 ssize_t rw_copy_check_uvector(int type, const struct iovec __user * uvector,
-			      unsigned long nr_segs, unsigned long fast_segs,
-			      struct iovec *fast_pointer,
-			      struct iovec **ret_pointer,
-			      int check_access);
+				unsigned long nr_segs, unsigned long fast_segs,
+				struct iovec *fast_pointer,
+				struct iovec **ret_pointer);
 
 extern ssize_t vfs_read(struct file *, char __user *, size_t, loff_t *);
 extern ssize_t vfs_write(struct file *, const char __user *, size_t, loff_t *);
@@ -2074,6 +2073,7 @@ static inline int thaw_bdev(struct block_device *bdev, struct super_block *sb)
 }
 #endif
 extern int sync_filesystem(struct super_block *);
+extern void sync_filesystems(int wait);
 extern const struct file_operations def_blk_fops;
 extern const struct file_operations def_chr_fops;
 extern const struct file_operations bad_sock_fops;
@@ -2532,9 +2532,6 @@ static inline ino_t parent_ino(struct dentry *dentry)
 	spin_unlock(&dentry->d_lock);
 	return res;
 }
-
-/* fs/suspend_fstrim.c */
-void suspend_fstrim_init(void);
 
 /* Transaction based IO helpers */
 

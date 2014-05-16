@@ -10,10 +10,6 @@ NAME = Sodden Ben Lomond
 # Comments in this file are targeted only to the developer, do not
 # expect to learn how to build the kernel reading this file.
 
-CKVERSION = -hybrid
-CKNAME = BFS Powered
-EXTRAVERSION := $(EXTRAVERSION)$(CKVERSION)
-
 # Do not:
 # o  use make's built-in rules and variables
 #    (this increases performance and avoids hard-to-debug behaviour);
@@ -200,9 +196,7 @@ ARCH		?= arm
 #CROSS_COMPILE	?= /home/android/linaro-k2wl-4.7/bin/arm-cortex_a9-linux-gnueabi-
 #CROSS_COMPILE	?= /home/android/SM4.8/bin/arm-eabi-
 #CROSS_COMPILE	?= /home/k2wl/k2wl-linaro-4.8/bin/arm-cortex_a9-linux-gnueabi-
-#CROSS_COMPILE	?= /home/k2wl/k2wl4.8/bin/arm-cortex_a9-linux-gnueabi-
-CROSS_COMPILE	?= /home/kar/sm-arm-eabi-4.10/bin/arm-eabi-
-
+CROSS_COMPILE	?= /home/k2wl/k2wl4.8/bin/arm-cortex_a9-linux-gnueabi-
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
 SRCARCH 	:= $(ARCH)
@@ -355,18 +349,10 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-
-LOW_ARM_FLAGS	= -march=armv7-a -mtune=cortex-a9 \
-		          -mfpu=neon -mfloat-abi=softfp
-
-ARM_FLAGS       = -marm -march=armv7-a -mtune=cortex-a9 \
-		          -mfpu=neon -mfloat-abi=softfp \
-		          -fsingle-precision-constant -mvectorize-with-neon-quad 
- 
-CFLAGS_MODULE   = -fno-pic
+CFLAGS_MODULE   =   -mcpu=cortex-a9 -mfpu=neon -ftree-vectorize -fsingle-precision-constant -fno-pic
 AFLAGS_MODULE   =
 LDFLAGS_MODULE  =
-CFLAGS_KERNEL	=
+CFLAGS_MODULE   =   -mcpu=cortex-a9 -mfpu=neon -ftree-vectorize -fsingle-precision-constant -fno-pic
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 

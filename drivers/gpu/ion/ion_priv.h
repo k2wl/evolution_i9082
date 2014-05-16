@@ -17,13 +17,23 @@
 #ifndef _ION_PRIV_H
 #define _ION_PRIV_H
 
-#include <linux/ion.h>
 #include <linux/kref.h>
 #include <linux/mm_types.h>
 #include <linux/mutex.h>
 #include <linux/rbtree.h>
-#include <linux/mm.h>
-#include <linux/types.h>
+#include <linux/ion.h>
+
+struct ion_mapping;
+
+struct ion_dma_mapping {
+	struct kref ref;
+	struct scatterlist *sglist;
+};
+
+struct ion_kernel_mapping {
+	struct kref ref;
+	void *vaddr;
+};
 
 struct ion_buffer *ion_handle_buffer(struct ion_handle *handle);
 
@@ -43,7 +53,7 @@ struct ion_buffer *ion_handle_buffer(struct ion_handle *handle);
  * @kmap_cnt:		number of times the buffer is mapped to the kernel
  * @vaddr:		the kenrel mapping if kmap_cnt is not zero
  * @dmap_cnt:		number of times the buffer is mapped for dma
- * @sg_table:		the sg table for the buffer if dmap_cnt is not zero
+ * @sglist:		the scatterlist for the buffer is dmap_cnt is not zero
 */
 struct ion_buffer {
 	struct kref ref;
@@ -60,7 +70,7 @@ struct ion_buffer {
 	int kmap_cnt;
 	void *vaddr;
 	int dmap_cnt;
-	struct sg_table *sg_table;
+	struct scatterlist *sglist;
 };
 
 /**
@@ -82,7 +92,7 @@ struct ion_heap_ops {
 	void (*free) (struct ion_buffer *buffer);
 	int (*phys) (struct ion_heap *heap, struct ion_buffer *buffer,
 		     ion_phys_addr_t *addr, size_t *len);
-	struct sg_table *(*map_dma) (struct ion_heap *heap,
+	struct scatterlist *(*map_dma) (struct ion_heap *heap,
 					struct ion_buffer *buffer);
 	void (*unmap_dma) (struct ion_heap *heap, struct ion_buffer *buffer);
 	void * (*map_kernel) (struct ion_heap *heap, struct ion_buffer *buffer);
@@ -170,51 +180,5 @@ void ion_carveout_free(struct ion_heap *heap, ion_phys_addr_t addr,
  * physical address, this is used to indicate allocation failed
  */
 #define ION_CARVEOUT_ALLOCATE_FAIL -1
-
-/**
- * functions for creating and destroying a heap pool -- allows you
- * to keep a pool of pre allocated memory to use from your heap.  Keeping
- * a pool of memory that is ready for dma, ie any cached mapping have been
- * invalidated from the cache, provides a significant peformance benefit on
- * many systems */
-
-/**
- * struct ion_page_pool - pagepool struct
- * @high_count:		number of highmem items in the pool
- * @low_count:		number of lowmem items in the pool
- * @high_items:		list of highmem items
- * @low_items:		list of lowmem items
- * @shrinker:		a shrinker for the items
- * @mutex:		lock protecting this struct and especially the count
- *			item list
- * @alloc:		function to be used to allocate pageory when the pool
- *			is empty
- * @free:		function to be used to free pageory back to the system
- *			when the shrinker fires
- * @gfp_mask:		gfp_mask to use from alloc
- * @order:		order of pages in the pool
- *
- * Allows you to keep a pool of pre allocated pages to use from your heap.
- * Keeping a pool of pages that is ready for dma, ie any cached mapping have
- * been invalidated from the cache, provides a significant peformance benefit
- * on many systems
- */
-struct ion_page_pool {
-	int high_count;
-	int low_count;
-	struct list_head high_items;
-	struct list_head low_items;
-	struct shrinker shrinker;
-	struct mutex mutex;
-	void *(*alloc)(struct ion_page_pool *pool);
-	void (*free)(struct ion_page_pool *pool, struct page *page);
-	gfp_t gfp_mask;
-	unsigned int order;
-};
-
-struct ion_page_pool *ion_page_pool_create(gfp_t gfp_mask, unsigned int order);
-void ion_page_pool_destroy(struct ion_page_pool *);
-void *ion_page_pool_alloc(struct ion_page_pool *);
-void ion_page_pool_free(struct ion_page_pool *, struct page *);
 
 #endif /* _ION_PRIV_H */

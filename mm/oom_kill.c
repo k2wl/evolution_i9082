@@ -32,35 +32,11 @@
 #include <linux/mempolicy.h>
 #include <linux/security.h>
 #include <linux/ptrace.h>
-#include <linux/ftrace.h>
-#include <linux/ratelimit.h>
 
-#define CREATE_TRACE_POINTS
-#include <trace/events/oom.h>
 int sysctl_panic_on_oom;
 int sysctl_oom_kill_allocating_task;
 int sysctl_oom_dump_tasks = 1;
 static DEFINE_SPINLOCK(zone_scan_lock);
-
-/*
- * compare_swap_oom_score_adj() - compare and swap current's oom_score_adj
- * @old_val: old oom_score_adj for compare
- * @new_val: new oom_score_adj for swap
- *
- * Sets the oom_score_adj value for current to @new_val iff its present value is
- * @old_val.  Usually used to reinstate a previous value to prevent racing with
- * userspacing tuning the value in the interim.
- */
-void compare_swap_oom_score_adj(int old_val, int new_val)
-{
-	struct sighand_struct *sighand = current->sighand;
-
-	spin_lock_irq(&sighand->siglock);
-	if (current->signal->oom_score_adj == old_val)
-		current->signal->oom_score_adj = new_val;
-	trace_oom_score_adj_update(current);
-	spin_unlock_irq(&sighand->siglock);
-}
 
 /**
  * test_set_oom_score_adj() - set current's oom_score_adj and return old value
@@ -84,8 +60,6 @@ int test_set_oom_score_adj(int new_val)
 			atomic_dec(&current->mm->oom_disable_count);
 		current->signal->oom_score_adj = new_val;
 	}
-	current->signal->oom_score_adj = new_val;
-	trace_oom_score_adj_update(current);
 	spin_unlock_irq(&sighand->siglock);
 
 	return old_val;
@@ -240,17 +214,12 @@ unsigned int oom_badness(struct task_struct *p, struct mem_cgroup *mem,
 	points += p->signal->oom_score_adj;
 
 	/*
-	 * Return 0 when the task has been explicitly marked as unkillable.
-	 * Otherwise never return 0 for an eligible task that may be killed since
-	 * it's possible that no single user task uses more than 0.1% of memory 
-	 * and no single admin tasks uses more than 3.0%.
+	 * Never return 0 for an eligible task that may be killed since it's
+	 * possible that no single user task uses more than 0.1% of memory and
+	 * no single admin tasks uses more than 3.0%.
 	 */
-	if (points <= 0) {
-		if (p->signal->oom_score_adj == OOM_SCORE_ADJ_MIN)
-			return 0;
-		else
-			return 1;
-	}
+	if (points <= 0)
+		return 1;
 	return (points < 1000) ? points : 1000;
 }
 
@@ -448,7 +417,7 @@ static void dump_header(struct task_struct *p, gfp_t gfp_mask, int order,
 }
 
 #define K(x) ((x) << (PAGE_SHIFT-10))
-static int oom_kill_task(struct task_struct *p)
+static int oom_kill_task(struct task_struct *p, struct mem_cgroup *mem)
 {
 	struct task_struct *q;
 	struct mm_struct *mm;
@@ -501,8 +470,9 @@ static int oom_kill_process(struct task_struct *p, gfp_t gfp_mask, int order,
 	struct task_struct *child;
 	struct task_struct *t = p;
 	unsigned int victim_points = 0;
-	static DEFINE_RATELIMIT_STATE(oom_rs, DEFAULT_RATELIMIT_INTERVAL,
-					      DEFAULT_RATELIMIT_BURST);
+
+	if (printk_ratelimit())
+		dump_header(p, gfp_mask, order, mem, nodemask);
 
 	/*
 	 * If the task is already exiting, don't alarm the sysadmin or kill
@@ -512,9 +482,6 @@ static int oom_kill_process(struct task_struct *p, gfp_t gfp_mask, int order,
 		set_tsk_thread_flag(p, TIF_MEMDIE);
 		return 0;
 	}
-
-	if (__ratelimit(&oom_rs))
-		dump_header(p, gfp_mask, order, mem, nodemask);
 
 	task_lock(p);
 	pr_err("%s: Kill process %d (%s) score %d or sacrifice child\n",
@@ -545,7 +512,7 @@ static int oom_kill_process(struct task_struct *p, gfp_t gfp_mask, int order,
 		}
 	} while_each_thread(p, t);
 
-	return oom_kill_task(victim);
+	return oom_kill_task(victim, mem);
 }
 
 /*
@@ -580,11 +547,11 @@ void mem_cgroup_out_of_memory(struct mem_cgroup *mem, gfp_t gfp_mask)
 	struct task_struct *p;
 
 	/*
-	 * If current has a pending SIGKILL or is exiting, then automatically
-	 * select it.  The goal is to allow it to allocate so that it may
-	 * quickly exit and free its memory.
+	 * If current has a pending SIGKILL, then automatically select it.  The
+	 * goal is to allow it to allocate so that it may quickly exit and free
+	 * its memory.
 	 */
-	if (fatal_signal_pending(current) || current->flags & PF_EXITING) {
+	if (fatal_signal_pending(current)) {
 		set_thread_flag(TIF_MEMDIE);
 		return;
 	}

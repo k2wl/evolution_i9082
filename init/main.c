@@ -68,9 +68,8 @@
 #include <linux/shmem_fs.h>
 #include <linux/slab.h>
 #include <linux/perf_event.h>
-#include <linux/boottime.h>
 #include <linux/random.h>
-#include <linux/fs.h>
+#include <linux/boottime.h>
 
 #include <asm/io.h>
 #include <asm/bugs.h>
@@ -646,8 +645,6 @@ asmlinkage void __init start_kernel(void)
 
 	ftrace_init();
 
-	suspend_fstrim_init();
-
 	/* Do the rest non-__init'ed, we're now alive */
 	rest_init();
 }
@@ -775,7 +772,6 @@ static noinline int init_post(void)
 	system_state = SYSTEM_RUNNING;
 	numa_default_policy();
 
-	print_scheduler_version();
 
 	current->signal->flags |= SIGNAL_UNKILLABLE;
 

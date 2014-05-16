@@ -2873,11 +2873,15 @@ retry:
 		unclone_ctx(ctx);
 		++ctx->pin_count;
 		raw_spin_unlock_irqrestore(&ctx->lock, flags);
-	} else {
+	}
+
+	if (!ctx) {
 		ctx = alloc_perf_context(pmu, task);
 		err = -ENOMEM;
 		if (!ctx)
 			goto errout;
+
+		get_ctx(ctx);
 
 		err = 0;
 		mutex_lock(&task->perf_event_mutex);
@@ -2890,14 +2894,14 @@ retry:
 		else if (task->perf_event_ctxp[ctxn])
 			err = -EAGAIN;
 		else {
-			get_ctx(ctx);
 			++ctx->pin_count;
 			rcu_assign_pointer(task->perf_event_ctxp[ctxn], ctx);
 		}
 		mutex_unlock(&task->perf_event_mutex);
 
 		if (unlikely(err)) {
-			put_ctx(ctx);
+			put_task_struct(task);
+			kfree(ctx);
 
 			if (err == -EAGAIN)
 				goto retry;

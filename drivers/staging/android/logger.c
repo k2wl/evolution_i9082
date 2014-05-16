@@ -26,16 +26,12 @@
 #include <linux/slab.h>
 #include <linux/time.h>
 #include "logger.h"
-#include "logger_interface.h"
 
 #include <asm/ioctls.h>
 
-#ifndef CONFIG_LOGCAT_SIZE
-#define CONFIG_LOGCAT_SIZE 256
+#if defined(CONFIG_SEC_DEBUG)
+#include <mach/sec_debug.h>
 #endif
-
-static unsigned int log_enabled = 1;
-module_param(log_enabled, uint, S_IWUSR | S_IRUGO);
 
 /*
  * struct logger_log - represents a specific log, such as 'main' or 'radio'
@@ -383,12 +379,6 @@ static void do_write_log(struct logger_log *log, const void *buf, size_t count)
 {
 	size_t len;
 
-	// if logger mode is disabled, terminate instantly
-	if (logger_mode == 0)
-	{
-			return;
-	} 
-        
 	len = min(count, log->size - log->w_off);
 	memcpy(log->buffer + log->w_off, buf, len);
 
@@ -411,12 +401,6 @@ static ssize_t do_write_log_from_user(struct logger_log *log,
 				      const void __user *buf, size_t count)
 {
 	size_t len;
-
-	// if logger mode is disabled, terminate instantly
-	if (logger_mode == 0)
-	{
-			return 0;
-	} 
 
 	len = min(count, log->size - log->w_off);
 	if (len && copy_from_user(log->buffer + log->w_off, buf, len))
@@ -458,9 +442,6 @@ ssize_t logger_aio_write(struct kiocb *iocb, const struct iovec *iov,
 	struct logger_entry header;
 	struct timespec now;
 	ssize_t ret = 0;
-
-    if (!log_enabled)
-        return 0;
 
 	now = current_kernel_time();
 
@@ -738,11 +719,10 @@ static struct logger_log VAR = { \
 	.size = SIZE, \
 };
 
-DEFINE_LOGGER_DEVICE(log_main, LOGGER_LOG_MAIN, CONFIG_LOGCAT_SIZE*1024)
-DEFINE_LOGGER_DEVICE(log_events, LOGGER_LOG_EVENTS, CONFIG_LOGCAT_SIZE*1024)
-DEFINE_LOGGER_DEVICE(log_radio, LOGGER_LOG_RADIO, CONFIG_LOGCAT_SIZE*1024)
-DEFINE_LOGGER_DEVICE(log_system, LOGGER_LOG_SYSTEM, CONFIG_LOGCAT_SIZE*1024)
-
+DEFINE_LOGGER_DEVICE(log_main, LOGGER_LOG_MAIN, 64*1024)
+DEFINE_LOGGER_DEVICE(log_events, LOGGER_LOG_EVENTS, 32*1024)
+DEFINE_LOGGER_DEVICE(log_radio, LOGGER_LOG_RADIO, 32*1024)
+DEFINE_LOGGER_DEVICE(log_system, LOGGER_LOG_SYSTEM, 64*1024)
 
 static struct logger_log *get_log_from_minor(int minor)
 {
