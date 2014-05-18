@@ -2108,7 +2108,7 @@ static int __set_regdom(const struct ieee80211_regdomain *rd)
 		 */
 		if (last_request->initiator == NL80211_REGDOM_SET_BY_DRIVER) {
 			const struct ieee80211_regdomain *tmp;
-
+ 
 			tmp = request_wiphy->regd;
 			request_wiphy->regd = rd;
 			kfree(tmp);

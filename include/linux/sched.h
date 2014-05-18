@@ -1517,6 +1517,7 @@ struct task_struct {
 	short il_next;
 	short pref_node_fork;
 #endif
+	atomic_t fs_excl;	/* holding fs exclusive resources */
 	struct rcu_head rcu;
 
 	/*
@@ -2745,16 +2746,6 @@ static inline unsigned long rlimit_max(unsigned int limit)
 {
 	return task_rlimit_max(current, limit);
 }
-
-#ifdef CONFIG_CGROUP_TIMER_SLACK
-extern unsigned long task_get_effective_timer_slack(struct task_struct *tsk);
-#else
-static inline unsigned long task_get_effective_timer_slack(
-		struct task_struct *tsk)
-{
-	return tsk->timer_slack_ns;
-}
-#endif
 
 #endif /* __KERNEL__ */
 

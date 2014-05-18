@@ -121,7 +121,7 @@ static int __init setup_uksm_zero_page(void)
 	unsigned long addr;
 	addr = __get_free_pages(GFP_KERNEL | __GFP_ZERO, 0);
 	if (!addr)
-		panic("Oh boy, that early out of memory?");
+	  panic("Oh boy, that early out of memory?");
 
 	empty_uksm_zero_page = virt_to_page((void *) addr);
 	SetPageReserved(empty_uksm_zero_page);
@@ -152,7 +152,6 @@ static int __init init_zero_pfn(void)
 	return 0;
 }
 core_initcall(init_zero_pfn);
-
 
 
 #if defined(SPLIT_RSS_COUNTING)
@@ -779,7 +778,7 @@ static inline int is_zero_pfn(unsigned long pfn)
 	return (pfn == zero_pfn) || (is_uksm_zero_pfn(pfn));
 }
 #else
-#define is_zero_pfn(pfn)   (is_zero_pfn(pfn) || is_uksm_zero_pfn(pfn))
+	#define is_zero_pfn(pfn)   (is_zero_pfn(pfn) || is_uksm_zero_pfn(pfn))
 #endif
 
 #ifndef my_zero_pfn
@@ -956,8 +955,8 @@ copy_one_pte(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 			rss[MM_ANONPAGES]++;
 		else
 			rss[MM_FILEPAGES]++;
-
-		/* Should return NULL in vm_normal_page() */
+		
+	/* Should return NULL in vm_normal_page() */
 		uksm_bugon_zeropage(pte);
 	} else {
 		uksm_map_zero_page(pte);
@@ -1198,7 +1197,7 @@ again:
 			tlb_remove_tlb_entry(tlb, pte, addr);
 			if (unlikely(!page)) {
 				uksm_unmap_zero_page(ptent);
-				continue;
+ 				continue;
 			}
 			if (unlikely(details) && details->nonlinear_vma
 			    && linear_page_index(details->nonlinear_vma,
@@ -1699,7 +1698,7 @@ int __get_user_pages(struct task_struct *tsk, struct mm_struct *mm,
 
 	VM_BUG_ON(!!pages != !!(gup_flags & FOLL_GET));
 
-	/*
+	/* 
 	 * Require read or write permissions.
 	 * If FOLL_FORCE is set, we only require the "MAY" flags.
 	 */
@@ -1746,7 +1745,7 @@ int __get_user_pages(struct task_struct *tsk, struct mm_struct *mm,
 				page = vm_normal_page(vma, start, *pte);
 				if (!page) {
 					if (!(gup_flags & FOLL_DUMP) &&
-					    (is_zero_pfn(pte_pfn(*pte))))
+					     (is_zero_pfn(pte_pfn(*pte))))
 						page = pte_page(*pte);
 					else {
 						pte_unmap(pte);
@@ -2776,10 +2775,10 @@ gotten:
 				dec_mm_counter_fast(mm, MM_FILEPAGES);
 				inc_mm_counter_fast(mm, MM_ANONPAGES);
 			}
-			uksm_bugon_zeropage(orig_pte);
+			 uksm_bugon_zeropage(orig_pte);
 		} else {
-			uksm_unmap_zero_page(orig_pte);
-			inc_mm_counter_fast(mm, MM_ANONPAGES);
+		uksm_unmap_zero_page(orig_pte);
+		inc_mm_counter_fast(mm, MM_ANONPAGES);
 		}
 		flush_cache_page(vma, address, pte_pfn(orig_pte));
 		entry = mk_pte(new_page, vma->vm_page_prot);

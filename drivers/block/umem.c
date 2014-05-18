@@ -513,7 +513,6 @@ static void process_page(unsigned long data)
 	}
 }
 
-<<<<<<< HEAD
 struct mm_plug_cb {
 	struct blk_plug_cb cb;
 	struct cardinfo *card;
@@ -553,9 +552,6 @@ static int mm_check_plugged(struct cardinfo *card)
 }
 
 static int mm_make_request(struct request_queue *q, struct bio *bio)
-=======
-static void mm_make_request(struct request_queue *q, struct bio *bio)
->>>>>>> 398669f... block: remove support for bio remapping from ->make_request
 {
 	struct cardinfo *card = q->queuedata;
 	pr_debug("mm_make_request %llu %u\n",
@@ -569,7 +565,7 @@ static void mm_make_request(struct request_queue *q, struct bio *bio)
 		activate(card);
 	spin_unlock_irq(&card->lock);
 
-	return;
+	return 0;
 }
 
 static irqreturn_t mm_interrupt(int irq, void *__card)

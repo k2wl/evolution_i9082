@@ -84,7 +84,6 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/sched.h>
 
-
 #ifdef CONFIG_BCM_KNLLOG_IRQ
 #include <linux/broadcom/knllog.h>
 #endif
@@ -2699,6 +2698,7 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 
 	smp_wmb();
 	raw_spin_lock_irqsave(&p->pi_lock, flags);
+
 	src_cpu = task_cpu(p);
 	cpu = src_cpu;
 
@@ -2757,6 +2757,7 @@ out:
 	if (src_cpu != cpu && task_notify_on_migrate(p))
 		atomic_notifier_call_chain(&migration_notifier_head,
 					   cpu, (void *)src_cpu);
+
 	return success;
 }
 

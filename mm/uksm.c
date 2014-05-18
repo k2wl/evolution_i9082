@@ -166,7 +166,7 @@ static int is_full_zero(const void *s1, size_t len)
 #else
 static int is_full_zero(const void *s1, size_t len)
 {
-	const unsigned long *src = s1;
+	unsigned long *src = s1;
 	int i;
 
 	len /= sizeof(*src);
@@ -517,7 +517,7 @@ static unsigned int uksm_sleep_saved;
 /* Max percentage of cpu utilization ksmd can take to scan in one batch */
 static unsigned int uksm_max_cpu_percentage;
 
-static int uksm_cpu_governor;
+static int uksm_cpu_governor = 3;
 
 static char *uksm_cpu_governor_str[4] = { "full", "medium", "low", "quiet" };
 
@@ -562,7 +562,7 @@ static unsigned long long uksm_sleep_times;
 
 #define UKSM_RUN_STOP	0
 #define UKSM_RUN_MERGE	1
-static unsigned int uksm_run = 1;
+static unsigned int uksm_run = 0;
 
 static DECLARE_WAIT_QUEUE_HEAD(uksm_thread_wait);
 static DEFINE_MUTEX(uksm_thread_mutex);
@@ -4397,7 +4397,7 @@ static inline int hash_round_finished(void)
  */
 static noinline void uksm_do_scan(void)
 {
-	struct vma_slot *slot = 0, *iter = 0;
+	struct vma_slot *slot, *iter;
 	struct mm_struct *busy_mm;
 	unsigned char round_finished, all_rungs_emtpy;
 	int i, err, mmsem_batch;
@@ -4897,7 +4897,7 @@ static int uksm_memory_callback(struct notifier_block *self,
 	static struct kobj_attribute _name##_attr = __ATTR_RO(_name)
 #define UKSM_ATTR(_name) \
 	static struct kobj_attribute _name##_attr = \
-		__ATTR(_name, 0644, _name##_show, _name##_store)
+		__ATTR(_name, 0666, _name##_show, _name##_store)
 
 static ssize_t max_cpu_percentage_show(struct kobject *kobj,
 				    struct kobj_attribute *attr, char *buf)
@@ -4941,7 +4941,7 @@ static ssize_t sleep_millisecs_store(struct kobject *kobj,
 	int err;
 
 	err = strict_strtoul(buf, 10, &msecs);
-	if (err || msecs > MSEC_PER_SEC)
+	if (err || msecs > 60000)
 		return -EINVAL;
 
 	uksm_sleep_jiffies = msecs_to_jiffies(msecs);
@@ -4950,6 +4950,29 @@ static ssize_t sleep_millisecs_store(struct kobject *kobj,
 	return count;
 }
 UKSM_ATTR(sleep_millisecs);
+
+static ssize_t cpu_governor_numeric_show(struct kobject *kobj,
+                                    struct kobj_attribute *attr, char *buf)
+{
+  return sprintf(buf, "%u\n", uksm_cpu_governor);
+}
+
+static ssize_t cpu_governor_numeric_store(struct kobject *kobj,
+                                     struct kobj_attribute *attr,
+                                     const char *buf, size_t count)
+{
+  unsigned long input;
+  int err;
+    
+  err = strict_strtoul(buf, 10, &input);
+  if (err || input < 0 || input > 3)
+    return -EINVAL;
+    
+  uksm_cpu_governor = input;
+    
+  return count;
+}
+UKSM_ATTR(cpu_governor_numeric);
 
 
 static ssize_t cpu_governor_show(struct kobject *kobj,
@@ -5620,3 +5643,4 @@ module_init(uksm_init)
 #else
 late_initcall(uksm_init);
 #endif
+

@@ -32,8 +32,6 @@ modules.builtin
 *.lzo
 *.patch
 *.gcno
-out/*.zip
-*.zip
 
 #
 # Top-level generic files
@@ -61,18 +59,11 @@ include/config
 include/linux/version.h
 include/generated
 arch/*/include/generated
-out/
-output/
-input_bootimage/
-k2wl/
-processing_tools/
-bootimg/
 
 # My ignored files and folders
 drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c
-output/
-out/zip/
-../../../../../vchiq_version.c
+output/flashablezip/outputzip/
+output/flashablezip/old_builds_zip/
 
 # stgit generated dirs
 patches-*

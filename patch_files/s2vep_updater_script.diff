@@ -1,0 +1,22 @@
+From 21123815f2d9dfd9cdde06b3c3bbb1fea566e784 Mon Sep 17 00:00:00 2001
+From: Shubhang <shubhang92@gmail.com>
+Date: Sat, 10 May 2014 17:45:03 +0530
+Subject: [PATCH] updater-script: add support of s2vep
+
+---
+ output/flashablezip/META-INF/com/google/android/updater-script | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/output/flashablezip/META-INF/com/google/android/updater-script b/output/flashablezip/META-INF/com/google/android/updater-script
+index c357f06..6e03e14 100644
+--- a/output/flashablezip/META-INF/com/google/android/updater-script
++++ b/output/flashablezip/META-INF/com/google/android/updater-script
+@@ -1,4 +1,4 @@
+-assert(getprop("ro.product.device") == "i9082" || getprop("ro.build.product") == "baffin" || getprop("ro.product.device") == "GT-I9082" || getprop("ro.product.device") == "I9082" || abort("This package is for \"baffin\" device; this is a \"" + getprop("ro.product.device") + "\"."););
++assert(getprop("ro.product.device") == "i9105P" || getprop("ro.build.product") == "s2vep" || getprop("ro.product.device") == "GT-I9105P" || getprop("ro.product.device") == "I9105P" || abort("This package is for \"s2vep\" device; this is a \"" + getprop("ro.product.device") + "\"."););
+ ui_print("");
+ ui_print("");
+ ui_print("........nebula  kernel........");
+-- 
+1.9.1
+
