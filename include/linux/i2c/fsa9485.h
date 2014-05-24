@@ -56,7 +56,7 @@ struct fsa9485_platform_data {
 	void (*usb_cdp_cb) (bool attached);
 	void (*smartdock_cb) (bool attached);
 #if defined(CONFIG_USB_OTG_AUDIODOCK)
-	void (*audiodock_cb) (int attached);
+	void (*audiodock_cb) (bool attached);
 #endif
 };
 
