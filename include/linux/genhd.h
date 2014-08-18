@@ -131,7 +131,6 @@ struct hd_struct {
 #ifdef CONFIG_USB_STORAGE_MEDIA_SCAN
 #define GENHD_IF_USB	1
 #endif
-#define GENHD_FL_NO_PART_SCAN			512
 
 enum {
 	DISK_EVENT_MEDIA_CHANGE			= 1 << 0, /* media changed */
@@ -236,10 +235,9 @@ static inline int disk_max_parts(struct gendisk *disk)
 	return disk->minors;
 }
 
-static inline bool disk_part_scan_enabled(struct gendisk *disk)
+static inline bool disk_partitionable(struct gendisk *disk)
 {
-	return disk_max_parts(disk) > 1 &&
-		!(disk->flags & GENHD_FL_NO_PART_SCAN);
+	return disk_max_parts(disk) > 1;
 }
 
 static inline dev_t disk_devt(struct gendisk *disk)
@@ -423,7 +421,7 @@ static inline int get_disk_ro(struct gendisk *disk)
 
 extern void disk_block_events(struct gendisk *disk);
 extern void disk_unblock_events(struct gendisk *disk);
-extern void disk_flush_events(struct gendisk *disk, unsigned int mask);
+extern void disk_check_events(struct gendisk *disk);
 extern unsigned int disk_clear_events(struct gendisk *disk, unsigned int mask);
 
 /* drivers/char/random.c */

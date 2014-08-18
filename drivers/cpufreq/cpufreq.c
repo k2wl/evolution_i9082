@@ -436,8 +436,6 @@ static ssize_t store_scaling_governor(struct cpufreq_policy *policy,
 	char *envp[3];
 	char buf1[64];
 	char buf2[64];
-	int alt_cpu;
-	struct cpufreq_policy* alt_policy;
 
 	ret = cpufreq_get_policy(&new_policy, policy->cpu);
 	if (ret)
@@ -457,22 +455,6 @@ static ssize_t store_scaling_governor(struct cpufreq_policy *policy,
 
 	policy->user_policy.policy = policy->policy;
 	policy->user_policy.governor = policy->governor;
-
-	alt_cpu = policy->cpu ? 0 : 1;
-	if(!cpu_online(alt_cpu))
-		cpu_up(alt_cpu);
-
-	if(!cpufreq_get_policy(&new_policy, alt_cpu)) {
-		alt_policy=cpufreq_cpu_get(alt_cpu);
-
-		if(alt_policy != NULL) {
-			cpufreq_parse_governor(str_governor, &new_policy.policy, &new_policy.governor);
-			__cpufreq_set_policy(alt_policy, &new_policy);
-			alt_policy->user_policy.policy = alt_policy->policy;
-			alt_policy->user_policy.governor = alt_policy->governor;
-			cpufreq_cpu_put(alt_policy);
-		}
-	}
 
 	snprintf(buf1, sizeof(buf1), "GOV=%s", policy->governor->name);
 	snprintf(buf2, sizeof(buf2), "CPU=%u", policy->cpu);
@@ -969,13 +951,6 @@ static int cpufreq_add_dev(struct sys_device *sys_dev)
 		pr_debug("initialization failed\n");
 		goto err_unlock_policy;
 	}
-	
-	/*
-	* affected cpus must always be the one, which are online. We aren't
-	* managing offline cpus here.
-	*/
-	cpumask_and(policy->cpus, policy->cpus, cpu_online_mask);
-
 	policy->user_policy.min = policy->min;
 	policy->user_policy.max = policy->max;
 

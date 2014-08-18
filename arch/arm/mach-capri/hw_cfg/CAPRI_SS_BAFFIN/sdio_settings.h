@@ -39,7 +39,6 @@
 		.peri_clk_rate = 52000000, \
 		.devtype = SDIO_DEV_TYPE_WIFI, \
 		.register_status_notify = capri_wifi_status_register, \
-		.configure_sdio_pullup = configure_wifi_pullup, \
 	}, \
 	{ /* SDIO2 */ \
 		.id = 1, \
@@ -57,7 +56,6 @@
 		.cd_gpio = 64, /* T_FLASH_DETECT */ \
 		.wp_gpio = -1, \
 		.devtype = SDIO_DEV_TYPE_SDMMC, \
-		.configure_sdio_pullup = configure_sdmmc_pullup, \
 	}, \
 }
 #else

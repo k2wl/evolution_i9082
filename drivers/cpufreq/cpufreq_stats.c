@@ -277,7 +277,7 @@ static int cpufreq_stat_notifier_policy(struct notifier_block *nb,
 		return 0;
 	ret = cpufreq_stats_create_table(policy, table);
 	if (ret)
-		pr_debug("%s: create table failed, ret=%d\n", __func__, ret);
+		return ret;
 	return 0;
 }
 
@@ -415,6 +415,7 @@ static void __exit cpufreq_stats_exit(void)
 	unregister_hotcpu_notifier(&cpufreq_stat_cpu_notifier);
 	for_each_online_cpu(cpu) {
 		cpufreq_stats_free_table(cpu);
+		cpufreq_stats_free_sysfs(cpu);
 	}
 }
 

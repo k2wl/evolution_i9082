@@ -1385,13 +1385,13 @@ static ssize_t aio_setup_vectored_rw(int type, struct kiocb *kiocb, bool compat)
 		ret = compat_rw_copy_check_uvector(type,
 				(struct compat_iovec __user *)kiocb->ki_buf,
 				kiocb->ki_nbytes, 1, &kiocb->ki_inline_vec,
-				&kiocb->ki_iovec, 1);
+				&kiocb->ki_iovec);
 	else
 #endif
 		ret = rw_copy_check_uvector(type,
 				(struct iovec __user *)kiocb->ki_buf,
 				kiocb->ki_nbytes, 1, &kiocb->ki_inline_vec,
-				&kiocb->ki_iovec, 1);
+				&kiocb->ki_iovec);
 	if (ret < 0)
 		goto out;
 
@@ -1618,6 +1618,7 @@ long do_io_submit(aio_context_t ctx_id, long nr,
 	struct kioctx *ctx;
 	long ret = 0;
 	int i;
+	struct blk_plug plug;
 
 	if (unlikely(nr < 0))
 		return -EINVAL;
@@ -1633,6 +1634,8 @@ long do_io_submit(aio_context_t ctx_id, long nr,
 		pr_debug("EINVAL: io_submit: invalid context id\n");
 		return -EINVAL;
 	}
+
+	blk_start_plug(&plug);
 
 	/*
 	 * AKPM: should this return a partial result if some of the IOs were
@@ -1656,6 +1659,7 @@ long do_io_submit(aio_context_t ctx_id, long nr,
 		if (ret)
 			break;
 	}
+	blk_finish_plug(&plug);
 
 	put_ioctx(ctx);
 	return i ? i : ret;

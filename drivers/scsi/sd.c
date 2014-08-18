@@ -2528,10 +2528,10 @@ static void sd_scanpartition_async(void *data, async_cookie_t cookie)
 	dev_set_uevent_suppress(ddev, 1);
 
 	/* No minors to use for partitions */
-	/*if (!disk_partitionable(gd)) {
+	if (!disk_partitionable(gd)) {
 		sd_printk(KERN_NOTICE, sdkp, "No disc partitions\n");
 		goto exit;
-	} */
+	}
 	bdev = bdget_disk(gd, 0);
 	if (!bdev) {
 		sd_printk(KERN_NOTICE, sdkp, "bdget_disk, bdev is NULL\n");

@@ -18,8 +18,7 @@
 #else
 #define BCMI2CNFC_BUSID  3
 #endif
-#define BCMI2CNFC_ADDR   0x77
+#define BCMI2CNFC_ADDR   0x1FA
 #define BCMI2CNFC_WAKE   141
-#define BCMI2CNFC_EN     178
+#define BCMI2CNFC_EN     139
 #define BCMI2CNFC_IRQ    140
-#define BCMI2CNFC_FLAGS  0

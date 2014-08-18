@@ -106,12 +106,13 @@ static struct bcmpmu_rw_data register_init_data[] = {
 	{.map = 0, .addr = 0x62, .val = 0x01, .mask = 0xff},//camldo1
 	{.map = 0, .addr = 0x63, .val = 0x01, .mask = 0xff},
 	{.map = 0, .addr = 0x97, .val = 0xBE, .mask = 0xff},//camldo1 3.3v
-	{.map = 0, .addr = 0x64, .val = 0x01, .mask = 0xff},
-	{.map = 0, .addr = 0x65, .val = 0x11, .mask = 0xff},
+	{.map = 0, .addr = 0x64, .val = 0x02, .mask = 0xff},//camldo2
+	{.map = 0, .addr = 0x65, .val = 0x02, .mask = 0xff},
 #if defined (CONFIG_MACH_CAPRI_SS_BAFFIN)
 	{.map = 0, .addr = 0x98, .val = 0xBC, .mask = 0xff},//camldo2 3.3v
+
 #else
-	{.map = 0, .addr = 0x98, .val = 0xA4, .mask = 0xff},//camldo2 2.8v
+	{.map = 0, .addr = 0x98, .val = 0x9C, .mask = 0xff},//camldo2 2.7v
 #endif
 	{.map = 0, .addr = 0x76, .val = 0x01, .mask = 0xff},//usbldo
 	{.map = 0, .addr = 0x77, .val = 0x11, .mask = 0xff},
@@ -124,16 +125,16 @@ static struct bcmpmu_rw_data register_init_data[] = {
 	{.map = 0, .addr = 0x79, .val = 0xAA, .mask = 0xff},
 	{.map = 0, .addr = 0xA2, .val = 0xAF, .mask = 0xff},
 	{.map = 0, .addr = 0x9B, .val = 0xB4, .mask = 0xff},//sdldo 3v
-	{.map = 0, .addr = 0x6E, .val = 0x01, .mask = 0xff},//mmcldo1
-	{.map = 0, .addr = 0x6F, .val = 0x11, .mask = 0xff},
-	{.map = 0, .addr = 0x9D, .val = 0x89, .mask = 0xff},//mmcldo1 1.8v
-	{.map = 0, .addr = 0x70, .val = 0x15, .mask = 0xff},//mmcldo2
-	{.map = 0, .addr = 0x71, .val = 0x15, .mask = 0xff},
-	{.map = 0, .addr = 0x9E, .val = 0xA1, .mask = 0xff},//mmcldo2 2.8v
+	{.map = 0, .addr = 0x6E, .val = 0x00, .mask = 0xff},//mmcldo1
+	{.map = 0, .addr = 0x6F, .val = 0x00, .mask = 0xff},
+	{.map = 0, .addr = 0x9D, .val = 0xA0, .mask = 0xff},//mmcldo1 2.8v
+	{.map = 0, .addr = 0x70, .val = 0x00, .mask = 0xff},//mmcldo2
+	{.map = 0, .addr = 0x71, .val = 0x00, .mask = 0xff},
+	{.map = 0, .addr = 0x9E, .val = 0xA0, .mask = 0xff},//mmcldo2 2.8v
 	{.map = 0, .addr = 0x9C, .val = 0x8D, .mask = 0xff},//sdxldo 1.8v
 	{.map = 0, .addr = 0x74, .val = 0xAA, .mask = 0xff},//micldo off
 	{.map = 0, .addr = 0x75, .val = 0xAA, .mask = 0xff},
-#if defined (CONFIG_MACH_CAPRI_SS_S2VE) || (CONFIG_MACH_CAPRI_SS_BAFFIN) || (CONFIG_MACH_CAPRI_SS_ARUBA)
+#if defined (CONFIG_CAPRI_SS_REV03) || (CONFIG_MACH_CAPRI_SS_BAFFIN) || (CONFIG_MACH_CAPRI_SS_ARUBA)
 	{.map = 1, .addr = 0x57, .val = 0xAA, .mask = 0xff},
 	{.map = 1, .addr = 0x58, .val = 0x22, .mask = 0xff},
 	{.map = 1, .addr = 0x59, .val = 0xAA, .mask = 0xff},
@@ -152,10 +153,6 @@ static struct bcmpmu_rw_data register_init_data[] = {
 	{.map = 1, .addr = 0xBF, .val = 0x64, .mask = 0xFF},
      // FG CIC
 	{.map = 1, .addr = 0xA3, .val = 0x02, .mask = 0xFF},
-
-
-	{.map = 1, .addr = 0xA3, .val = 0x02, .mask = 0xFF},
-
 	{.map = 1, .addr = 0xEF, .val = 0x11, .mask = 0xFF},	
 
 	/* PWMLED blovk powerdown */
@@ -163,6 +160,7 @@ static struct bcmpmu_rw_data register_init_data[] = {
 
 	/* NTCBIAS  Sync Mode + set part of OpMode*/
 	{.map = 1, .addr = 0xD5, .val = 0x13, .mask = 0xFF},
+
 
 	/* NTCBIAS  part of OPmode*/
 	{.map = 1, .addr = 0xD6, .val = 0x01, .mask = 0xFF},
@@ -173,6 +171,7 @@ static struct bcmpmu_rw_data register_init_data[] = {
 	/* Disable MB working voltage comparator */
 	/* RIDBIAS  part of OPmode*/
 	{.map = 1, .addr = 0xD8, .val = 0x01, .mask = 0xFF},
+
 };
 
 static struct bcmpmu_temp_map batt_temp_map[] = {
@@ -180,29 +179,27 @@ static struct bcmpmu_temp_map batt_temp_map[] = {
 /*	adc		temp*/
 	{932, -400},			/* -40 C */
 	{900, -350},			/* -35 C */
-	{860, -300},			/* -30 C */
-	{816, -250},			/* -25 C */
-	{760, -200},			/* -20 C */
-	{704, -150},			/* -15 C */
-	{636, -100},			/* -10 C */
-	{568, -50},			/* -5 C */
-	{500, 0},			/* 0 C */
-	{440, 50},			/* 5 C */
-	{376, 100},			/* 10 C */
-	{324, 150},			/* 15 C */
-	{272, 200},			/* 20 C */
-	{228, 250},			/* 25 C */
-	{192, 300},			/* 30 C */
-	{160, 350},			/* 35 C */
-	{132, 400},			/* 40 C */
-	{112, 450},			/* 45 C */
-	{92, 500},			/* 50 C */
-	{76, 550},			/* 55 C */
-	{64, 600},			/* 60 C */
-	{52, 650},			/* 65 C */
-	{44, 700},			/* 70 C */
-	{36, 750},			/* 75 C */
-	{32, 800},			/* 80 C */
+	{869, -300},            /* -30 */
+	{754, -200},			/* -20 */
+	{709, -150},			/* -15 */
+	{644, -100},                    /* -10 */
+	{577, -50},						/* -5 */
+	{510,   0},                    /* 0   */
+	{445,   50},                    /* 0   */
+	{383,  100},                    /* 10  */
+	{329,  150},                    /* 15  */
+	{279,  200},                    /* 20  */
+	{234,  250},                    /* 25  */
+	{197,  300},                    /* 30  */
+	{164,  350},                    /* 30  */
+	{137,  400},                    /* 40  */
+	{115,  450},                    /* 40  */
+	{96 ,  500},                    /* 50  */
+	{81 ,  550},                    /* 50  */
+	{68 ,  600},                    /* 60  */
+	{57 ,  650},                    /* 65  */
+	{48 ,  700},            /* 70  */
+	{34 ,  800},            /* 80  */
 	{28, 850},			/* 85 C */
 	{24, 900},			/* 90 C */
 	{20, 950},			/* 95 C */
@@ -291,7 +288,7 @@ static struct regulator_init_data bcm59056_camldo2_data = {
 
 struct regulator_consumer_supply sd_supply[] = {
 	{.supply = "sdldo_uc"},
-	REGULATOR_SUPPLY("vddmmc", "sdhci.3"), /* regulator for SD vddmmc */
+	REGULATOR_SUPPLY("vddmmc", "sdhci.3"), /* 0x3f1b0000.sdhci */
 };
 static struct regulator_init_data bcm59056_sdldo_data = {
 	.constraints = {
@@ -331,7 +328,6 @@ static struct regulator_init_data bcm59056_sdxldo_data = {
 
 struct regulator_consumer_supply vib_supply[] = {
 	{.supply = "vibldo_uc"},
-	REGULATOR_SUPPLY("tsp_vdd_1.8v", NULL), /* tsp vdd 1.8v */
 };
 static struct regulator_init_data bcm59056_vibldo_data = {
 	.constraints = {
@@ -408,11 +404,6 @@ static struct regulator_init_data bcm59056_mmcldo1_data = {
 
 struct regulator_consumer_supply mmc2_supply[] = {
 	{.supply = "mmcldo2_uc"},
-	REGULATOR_SUPPLY("vdd", "1-005c"), /* tango */
-	REGULATOR_SUPPLY("vdd", "0-000e"), /* ami306 */
-	REGULATOR_SUPPLY("vdd", "0-0068"), /* mpu6050 */
-	REGULATOR_SUPPLY("vdd", "0-0077"), /* bmp18x */
-	REGULATOR_SUPPLY("vdd", "0-001d"), /* al3006 */
 };
 static struct regulator_init_data bcm59056_mmcldo2_data = {
 	.constraints = {
@@ -423,7 +414,7 @@ static struct regulator_init_data bcm59056_mmcldo2_data = {
 		REGULATOR_CHANGE_MODE | REGULATOR_CHANGE_VOLTAGE,
 		.always_on = 1,
 		.state_standby = {
-			.disabled = 0, /* 0 for LPM, 1 for OFF */
+			.disabled = 1, /* 0 for LPM, 1 for OFF */
 		},
 	},
 	.num_consumer_supplies = ARRAY_SIZE(mmc2_supply),
@@ -620,7 +611,7 @@ static struct regulator_init_data bcm59056_gpldo4_data = {
 
 struct regulator_consumer_supply gp5_supply[] = {
 	{.supply = "gpldo5_uc"},
-	REGULATOR_SUPPLY("tsp_vdd_2.8v",NULL), /* TSP VDD 2.8V for rev03*/
+	REGULATOR_SUPPLY("tsp_vdd", NULL), /* TSP AVDD */
 };
 static struct regulator_init_data bcm59056_gpldo5_data = {
 	.constraints = {
@@ -640,7 +631,7 @@ static struct regulator_init_data bcm59056_gpldo5_data = {
 
 struct regulator_consumer_supply gp6_supply[] = {
 	{.supply = "gpldo6_uc"},
-	REGULATOR_SUPPLY("tsp_avdd_3.3v",NULL), /* TSP AVDD 3.3V*/
+	REGULATOR_SUPPLY("tsp_avdd", NULL), /* TSP AVDD */
 };
 static struct regulator_init_data bcm59056_gpldo6_data = {
 	.constraints = {
@@ -660,13 +651,13 @@ static struct regulator_init_data bcm59056_gpldo6_data = {
 
 struct bcmpmu_regulator_init_data bcm59056_regulators[BCMPMU_REGULATOR_MAX] = {
 	[BCMPMU_REGULATOR_RFLDO] = {
-		BCMPMU_REGULATOR_RFLDO, &bcm59056_rfldo_data, 0xff, 0
+		BCMPMU_REGULATOR_RFLDO, &bcm59056_rfldo_data, 0x2A, 0
 	},
 	[BCMPMU_REGULATOR_CAMLDO] = {
 		BCMPMU_REGULATOR_CAMLDO, &bcm59056_camldo1_data, 0xff, 0
 	},
 	[BCMPMU_REGULATOR_CAMLDO2] = {
-		BCMPMU_REGULATOR_CAMLDO2, &bcm59056_camldo2_data, 0x02, BCMPMU_REGL_OFF_IN_DSM
+		BCMPMU_REGULATOR_CAMLDO2, &bcm59056_camldo2_data, 0x02, 1
 	},
 	[BCMPMU_REGULATOR_SDLDO] = {
 		BCMPMU_REGULATOR_SDLDO, &bcm59056_sdldo_data, 0x02, BCMPMU_REGL_OFF_IN_DSM
@@ -696,7 +687,7 @@ struct bcmpmu_regulator_init_data bcm59056_regulators[BCMPMU_REGULATOR_MAX] = {
 		BCMPMU_REGULATOR_SIM2LDO, &bcm59056_sim2ldo_data, 0xAA, BCMPMU_REGL_LPM_IN_DSM
 	},
 	[BCMPMU_REGULATOR_HDMILDO] = {
-		BCMPMU_REGULATOR_HDMILDO, &bcm59056_hdmildo_data, 0x02, 0
+		BCMPMU_REGULATOR_HDMILDO, &bcm59056_hdmildo_data, 0x00, 0
 	},
 	[BCMPMU_REGULATOR_USBLDO] = {
 		BCMPMU_REGULATOR_USBLDO, &bcm59056_usbldo_data, 0x01, 0
@@ -711,21 +702,21 @@ struct bcmpmu_regulator_init_data bcm59056_regulators[BCMPMU_REGULATOR_MAX] = {
 		BCMPMU_REGULATOR_VSR_NM, &bcm59056_vsr_data, 0x02, 0
 	},
 	[BCMPMU_REGULATOR_GPLDO1] = {
-		BCMPMU_REGULATOR_GPLDO1, &bcm59056_gpldo1_data, 0xAA, BCMPMU_REGL_OFF_IN_DSM
+		BCMPMU_REGULATOR_GPLDO1, &bcm59056_gpldo1_data, 0xAA, 1
 	},
 	[BCMPMU_REGULATOR_GPLDO2] = {
-		BCMPMU_REGULATOR_GPLDO2, &bcm59056_gpldo2_data, 0xAA, BCMPMU_REGL_OFF_IN_DSM
+		BCMPMU_REGULATOR_GPLDO2, &bcm59056_gpldo2_data, 0xAA, 1
 	},
 	[BCMPMU_REGULATOR_GPLDO3] = {
-		BCMPMU_REGULATOR_GPLDO3, &bcm59056_gpldo3_data, 0xAA, BCMPMU_REGL_OFF_IN_DSM
+		BCMPMU_REGULATOR_GPLDO3, &bcm59056_gpldo3_data, 0xAA, 1
 	},
 	[BCMPMU_REGULATOR_GPLDO4] = {
-		BCMPMU_REGULATOR_GPLDO4, &bcm59056_gpldo4_data, 0xAA, BCMPMU_REGL_OFF_IN_DSM
+		BCMPMU_REGULATOR_GPLDO4, &bcm59056_gpldo4_data, 0xAA, 1
 	},
 	[BCMPMU_REGULATOR_GPLDO5] = {
-		BCMPMU_REGULATOR_GPLDO5, &bcm59056_gpldo5_data, 0xAA, BCMPMU_REGL_OFF_IN_DSM
+		BCMPMU_REGULATOR_GPLDO5, &bcm59056_gpldo5_data, 0xAA, 1
 	},
 	[BCMPMU_REGULATOR_GPLDO6] = {
-		BCMPMU_REGULATOR_GPLDO6, &bcm59056_gpldo6_data, 0xAA, BCMPMU_REGL_OFF_IN_DSM
+		BCMPMU_REGULATOR_GPLDO6, &bcm59056_gpldo6_data, 0xAA, 1
 	},
 };

@@ -3490,15 +3490,15 @@ static void __init add_usbh_device(void)
 static void otg_accessory_power(int enable)
 {
 	u8 on = (u8)!!enable;
-	printk("USBD] otg_accessory_power\n");
+	printk("USBD] otg_accessory_power dis\n");
 	/* max77693 otg power control */
-
-	//otg_control(enable);
+	/*
+	otg_control(enable);
 
 	gpio_request(GPIO_OTG_EN, "USB_OTG_EN");
 	gpio_direction_output(GPIO_OTG_EN, on);
 	gpio_free(GPIO_OTG_EN);
-	pr_info("%s: otg accessory power = %d\n", __func__, on);
+	pr_info("%s: otg accessory power = %d\n", __func__, on);*/
 }
 
 static void otg_accessory_powered_booster(int enable)

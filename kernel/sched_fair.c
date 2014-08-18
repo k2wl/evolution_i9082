@@ -91,8 +91,6 @@ unsigned int __read_mostly sysctl_sched_shares_window = 10000000UL;
 
 static const struct sched_class fair_sched_class;
 
-static unsigned long __read_mostly max_load_balance_interval = HZ/10;
-
 /**************************************************************
  * CFS operations on generic schedulable entities:
  */
@@ -2041,8 +2039,6 @@ static bool yield_to_task_fair(struct rq *rq, struct task_struct *p, bool preemp
  * Fair scheduling class load-balancing methods:
  */
 
-static DEFINE_PER_CPU(bool, dbs_boost_needed);
-
 /*
  * pull_task - move a task from a remote runqueue to the local runqueue.
  * Both runqueues must be locked.
@@ -2054,8 +2050,6 @@ static void pull_task(struct rq *src_rq, struct task_struct *p,
 	set_task_cpu(p, this_cpu);
 	activate_task(this_rq, p, 0);
 	check_preempt_curr(this_rq, p, 0);
-	if (task_notify_on_migrate(p))
-		per_cpu(dbs_boost_needed, this_cpu) = true;
 }
 
 /*
@@ -2661,11 +2655,6 @@ static void update_group_power(struct sched_domain *sd, int cpu)
 	struct sched_domain *child = sd->child;
 	struct sched_group *group, *sdg = sd->groups;
 	unsigned long power;
-	unsigned long interval;
-
-	interval = msecs_to_jiffies(sd->balance_interval);
-	interval = clamp(interval, 1UL, max_load_balance_interval);
-	sdg->sgp->next_update = jiffies + interval;
 
 	if (!child) {
 		update_cpu_power(sd, cpu);
@@ -2773,15 +2762,12 @@ static inline void update_sg_lb_stats(struct sched_domain *sd,
 	 * domains. In the newly idle case, we will allow all the cpu's
 	 * to do the newly idle load balance.
 	 */
-	if (local_group) {
-		if (idle != CPU_NEWLY_IDLE) {
-			if (balance_cpu != this_cpu) {
-				*balance = 0;
-				return;
-			}
-			update_group_power(sd, this_cpu);
-		} else if (time_after_eq(jiffies, group->sgp->next_update))
-			update_group_power(sd, this_cpu);
+	if (idle != CPU_NEWLY_IDLE && local_group) {
+		if (balance_cpu != this_cpu) {
+			*balance = 0;
+			return;
+		}
+		update_group_power(sd, this_cpu);
 	}
 
 	/* Adjust by relative CPU power of the group */
@@ -3462,15 +3448,9 @@ redo:
 			 */
 			sd->nr_balance_failed = sd->cache_nice_tries+1;
 		}
-	} else {
+	} else
 		sd->nr_balance_failed = 0;
-		if (per_cpu(dbs_boost_needed, this_cpu)) {
-			per_cpu(dbs_boost_needed, this_cpu) = false;
-			atomic_notifier_call_chain(&migration_notifier_head,
-						   this_cpu,
-						   (void *)cpu_of(busiest));
-		}
-	}
+
 	if (likely(!active_balance)) {
 		/* We were unbalanced, so reset the balancing interval */
 		sd->balance_interval = sd->min_interval;
@@ -3616,12 +3596,6 @@ static int active_load_balance_cpu_stop(void *data)
 out_unlock:
 	busiest_rq->active_balance = 0;
 	raw_spin_unlock_irq(&busiest_rq->lock);
-	if (per_cpu(dbs_boost_needed, target_cpu)) {
-		per_cpu(dbs_boost_needed, target_cpu) = false;
-		atomic_notifier_call_chain(&migration_notifier_head,
-					   target_cpu,
-					   (void *)cpu_of(busiest_rq));
-	}
 	return 0;
 }
 
@@ -3893,6 +3867,8 @@ void select_nohz_load_balancer(int stop_tick)
 
 static DEFINE_SPINLOCK(balancing);
 
+static unsigned long __read_mostly max_load_balance_interval = HZ/10;
+
 /*
  * Scale the max load_balance interval with the number of CPUs in the system.
  * This trades load-balance latency on larger machines for less cross talk.
@@ -3989,10 +3965,8 @@ static void nohz_idle_balance(int this_cpu, enum cpu_idle_type idle)
 	struct rq *rq;
 	int balance_cpu;
 
-	if (idle != CPU_IDLE || !this_rq->nohz_balance_kick) {
-		this_rq->nohz_balance_kick = 0;
+	if (idle != CPU_IDLE || !this_rq->nohz_balance_kick)
 		return;
-	}
 
 	for_each_cpu(balance_cpu, nohz.idle_cpus_mask) {
 		if (balance_cpu == this_cpu)
@@ -4219,15 +4193,15 @@ static void switched_from_fair(struct rq *rq, struct task_struct *p)
 	struct cfs_rq *cfs_rq = cfs_rq_of(se);
 
 	/*
-	 * Ensure the task's vruntime is normalized, so that when it's
+	 * Ensure the task's vruntime is normalized, so that when its
 	 * switched back to the fair class the enqueue_entity(.flags=0) will
 	 * do the right thing.
 	 *
-	 * If it's on_rq, then the dequeue_entity(.flags=0) will already
-	 * have normalized the vruntime, if it's !on_rq, then only when
+	 * If it was on_rq, then the dequeue_entity(.flags=0) will already
+	 * have normalized the vruntime, if it was !on_rq, then only when
 	 * the task is sleeping will it still have non-normalized vruntime.
 	 */
-	if (!p->on_rq && p->state != TASK_RUNNING) {
+	if (!se->on_rq && p->state != TASK_RUNNING) {
 		/*
 		 * Fix up our vruntime so that the current sleep doesn't
 		 * cause 'unlimited' sleep bonus.
