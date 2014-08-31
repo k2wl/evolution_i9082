@@ -681,27 +681,6 @@ wl_get_status_all(struct wl_priv *wl, s32 status)
 	}
 	return cnt;
 }
-static inline void
-wl_set_status_all(struct wl_priv *wl, s32 status, u32 op)
-{
-	struct net_info *_net_info, *next;
-	list_for_each_entry_safe(_net_info, next, &wl->net_list, list) {
-		switch (op) {
-			case 1:
-				return; /* set all status is not allowed */
-			case 2:
-				clear_bit(status, &_net_info->sme_state);
-				if (wl->state_notifier &&
-					test_bit(status, &(wl->interrested_state)))
-					wl->state_notifier(wl, _net_info, status, false);
-				break;
-			case 4:
-				return; /* change all status is not allowed */
-			default:
-				return; /* unknown operation */
-			}
-		}
-}
 
 static inline void
 wl_set_status_all(struct wl_priv *wl, s32 status, u32 op)
