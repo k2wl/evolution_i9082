@@ -58,21 +58,11 @@ static const int elv_hash_shift = 6;
  */
 static int elv_iosched_allow_merge(struct request *rq, struct bio *bio)
 {
-	/***
-	 * Local variables for temporary saving of request_queue and elevator_queue should not be used.
-	 * request_queue and elevator_queue can be changed on SMP race condition.
-	 * by NANI.
-	 ***/
-#if 0
 	struct request_queue *q = rq->q;
 	struct elevator_queue *e = q->elevator;
 
-	if (e->ops->elevator_allow_merge_fn)
-		return e->ops->elevator_allow_merge_fn(q, rq, bio);
-#else
-	if (rq->q->elevator->ops->elevator_allow_merge_fn)
-		return rq->q->elevator->ops->elevator_allow_merge_fn(rq->q, rq, bio);
-#endif
+	if (e->type->ops.elevator_allow_merge_fn)
+		return e->type->ops.elevator_allow_merge_fn(q, rq, bio);
 
 	return 1;
 }
