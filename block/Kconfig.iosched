@@ -145,6 +145,9 @@ choice
 	config DEFAULT_NOOP
 		bool "No-op"
 
+    config DEFAULT_SIOPLUS
+        bool "SIOPLUS" if IOSCHED_SIOPLUS=y
+
 endchoice
 
 config DEFAULT_IOSCHED
@@ -157,6 +160,7 @@ config DEFAULT_IOSCHED
 	default "fiops" if DEFAULT_FIOPS
 	default "vr" if DEFAULT_VR
 	default "noop" if DEFAULT_NOOP
+    default "sioplus" if DEFAULT_SIOPLUS
 
 endmenu
 
