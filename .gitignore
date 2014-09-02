@@ -47,7 +47,7 @@ modules.builtin
 /Module.symvers
 output/
 processing_tools/
-	
+
 #
 # git files that we don't want to ignore even it they are dot-files
 #
