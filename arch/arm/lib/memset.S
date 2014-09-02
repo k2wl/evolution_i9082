@@ -8,120 +8,138 @@
  * published by the Free Software Foundation.
  *
  *  ASM optimised string functions
+ *
+ *  Optimization for modern ARM platforms
+ *  Copyright 2013 Harm Hanemaaijer
+ *
  */
 #include <linux/linkage.h>
 #include <asm/assembler.h>
 
 	.text
-	.align	5
-	.word	0
-
-1:	subs	r2, r2, #4		@ 1 do we have enough
-	blt	5f			@ 1 bytes to align with?
-	cmp	r3, #2			@ 1
-	strltb	r1, [r0], #1		@ 1
-	strleb	r1, [r0], #1		@ 1
-	strb	r1, [r0], #1		@ 1
-	add	r2, r2, r3		@ 1 (r2 = r2 - (4 - r3))
-/*
- * The pointer is now aligned and the length is adjusted.  Try doing the
- * memset again.
- */
+	.syntax unified
+ARM(	.p2align 5	)
+THUMB(	.p2align 2	)
 
 ENTRY(memset)
-	ands	r3, r0, #3		@ 1 unaligned?
-	bne	1b			@ 1
+	ands	r3, r0, #3
+	mov	ip, r0
+	bne	8f
+
 /*
  * we know that the pointer in r0 is aligned to a word boundary.
  */
-	orr	r1, r1, r1, lsl #8
+1:	orr	r1, r1, r1, lsl #8
+	cmp	r2, #8
 	orr	r1, r1, r1, lsl #16
+	blt	5f
 	mov	r3, r1
-	cmp	r2, #16
+	cmp	r2, #64
+	push 	{r4}
 	blt	4f
-
-#if ! CALGN(1)+0
-
-/*
- * We need an extra register for this loop - save the return address and
- * use the LR
- */
-	str	lr, [sp, #-4]!
-	mov	ip, r1
-	mov	lr, r1
-
-2:	subs	r2, r2, #64
-	stmgeia	r0!, {r1, r3, ip, lr}	@ 64 bytes at a time.
-	stmgeia	r0!, {r1, r3, ip, lr}
-	stmgeia	r0!, {r1, r3, ip, lr}
-	stmgeia	r0!, {r1, r3, ip, lr}
-	bgt	2b
-	ldmeqfd	sp!, {pc}		@ Now <64 bytes to go.
-/*
- * No need to correct the count; we're only testing bits from now on
- */
-	tst	r2, #32
-	stmneia	r0!, {r1, r3, ip, lr}
-	stmneia	r0!, {r1, r3, ip, lr}
-	tst	r2, #16
-	stmneia	r0!, {r1, r3, ip, lr}
-	ldr	lr, [sp], #4
-
-#else
-
-/*
- * This version aligns the destination pointer in order to write
- * whole cache lines at once.
- */
-
-	stmfd	sp!, {r4-r7, lr}
-	mov	r4, r1
-	mov	r5, r1
-	mov	r6, r1
-	mov	r7, r1
-	mov	ip, r1
-	mov	lr, r1
-
-	cmp	r2, #96
-	tstgt	r0, #31
-	ble	3f
-
-	and	ip, r0, #31
-	rsb	ip, ip, #32
-	sub	r2, r2, ip
-	movs	ip, ip, lsl #(32 - 4)
-	stmcsia	r0!, {r4, r5, r6, r7}
-	stmmiia	r0!, {r4, r5}
-	tst	ip, #(1 << 30)
-	mov	ip, r1
+#if MEMSET_WRITE_ALIGN_BYTES > 0
+	ands	r4, r0, #(MEMSET_WRITE_ALIGN_BYTES - 1)
+	/* Let r4 be equal to the number of bytes to align.  */
+	rsb	r4, r4, #MEMSET_WRITE_ALIGN_BYTES
+	/*
+	 * At this point r4 contains the number of bytes to align
+	 * if eq is not set. The eq flag is set if there are no bytes
+	 * to align.
+	 */
+#if MEMSET_WRITE_ALIGN_BYTES == 8
+	subne	r2, r2, r4
 	strne	r1, [r0], #4
-
-3:	subs	r2, r2, #64
-	stmgeia	r0!, {r1, r3-r7, ip, lr}
-	stmgeia	r0!, {r1, r3-r7, ip, lr}
-	bgt	3b
-	ldmeqfd	sp!, {r4-r7, pc}
-
-	tst	r2, #32
-	stmneia	r0!, {r1, r3-r7, ip, lr}
-	tst	r2, #16
-	stmneia	r0!, {r4-r7}
-	ldmfd	sp!, {r4-r7, lr}
-
+#elif MEMSET_WRITE_ALIGN_BYTES == 32
+	beq	2f
+	tst     r4, #4
+	sub	r2, r2, r4
+	strne	r1, [r0], #4
+	tst     r4, #8
+	stmiane r0!, {r1, r3}
+	cmp	r4, #16
+	stmiage r0!, {r1, r3}
+	stmiage r0!, {r1, r3}
+#endif
+	cmp	r2, #64
+	blt	4f
 #endif
 
-4:	tst	r2, #8
-	stmneia	r0!, {r1, r3}
-	tst	r2, #4
-	strne	r1, [r0], #4
-/*
- * When we get here, we've got less than 4 bytes to zero.  We
- * may have an unaligned pointer as well.
- */
-5:	tst	r2, #2
-	strneb	r1, [r0], #1
-	strneb	r1, [r0], #1
+2:	mov	r4, r1
+	push	{r5}
+	mov	r5, r1
+
+3:	stmia	r0!, {r1, r3, r4, r5}
+	subs	r2, r2, #64		/* Thumb16 */
+	stmia	r0!, {r1, r3, r4, r5}
+	cmp	r2, #64
+	stmia	r0!, {r1, r3, r4, r5}
+	stmia	r0!, {r1, r3, r4, r5}
+	bge	3b
+
+	pop	{r5}
+	/* Early exit if there are 0 bytes left. */
+THUMB(	cbz	r2, 7f	)
+ARM(	teq	r2, #0	)
+ARM(	beq	7f	)
+
+	/* Handle 8-64 bytes. */
+4:	bic	r4, r2, #7
+	subs	r2, r2, r4
+	rsb	r4, r4, #64
+	/* The stmia instruction is 32-bit for ARM, 16-bit for Thumb2. */
+THUMB(	lsrs	r4, r4, #2	)
+ARM(	lsrs	r4, r4, #1	)
+	add	pc, pc, r4
+	nop
+	stmia	r0!, {r1, r3}
+	stmia	r0!, {r1, r3}
+	stmia	r0!, {r1, r3}
+	stmia	r0!, {r1, r3}
+	stmia	r0!, {r1, r3}
+	stmia	r0!, {r1, r3}
+	stmia	r0!, {r1, r3}
+	stmia	r0!, {r1, r3}
+	pop	{r4}
+
+5:	cmp	r2, #4
+	strge	r1, [r0], #4
+	/* Early exit for multiple of 4 size. */
+	ands	r2, r2, #3
+	moveq	r0, ip
+	moveq	pc, lr
+
+	/*
+	 * At this point there are 1, 2 or 3 bytes,
+	 * and the destination is aligned.
+	 */
+6:	cmp	r2, #2
+	strhge	r1, [r0], #2
+	strbne	r1, [r0]
+	mov	r0, ip
+	mov 	pc, lr
+
+7:	pop	{r4}
+	mov	r0, ip
+	mov	pc, lr
+
+8:	cmp	r2, #4
+	blt	9f
+	cmp	r3, #2
+	sub	r2, r2, #4
+	strble	r1, [r0]
+	strble	r1, [r0, #1]
+	addle	r0, r0, #2
+	add	r2, r2, r3
+	strbne	r1, [r0], #1
+	b	1b
+
+	/* 0 to 3 bytes left. */
+9:	cmp	r2, #2
+	strbge  r1, [r0]
+	strbge  r1, [r0, #1]
+	addge	r0, r0, #2
 	tst	r2, #1
-	strneb	r1, [r0], #1
+	strbne  r1, [r0]
+	mov	r0, ip
 	mov	pc, lr
 ENDPROC(memset)
