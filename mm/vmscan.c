@@ -659,17 +659,10 @@ void putback_lru_page(struct page *page)
 	int was_unevictable = PageUnevictable(page);
 
 	VM_BUG_ON(PageLRU(page));
-	if (active)
-		SetPageWasActive(page);
 
 #ifdef CONFIG_CLEANCACHE
 	if (active)
 		SetPageWasActive(page);
-#endif
-
-#ifdef CONFIG_CLEANCACHE
-  if (active)
-    SetPageWasActive(page);
 #endif
 
 redo:
