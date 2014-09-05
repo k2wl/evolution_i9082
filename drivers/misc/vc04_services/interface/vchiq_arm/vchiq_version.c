@@ -1,8 +1,8 @@
 #include "vchiq_build_info.h"
 #include <linux/broadcom/vc_debug_sym.h>
 
-VC_DEBUG_DECLARE_STRING_VAR( vchiq_build_hostname, "SEV-DEV-SOLUTION" );
-VC_DEBUG_DECLARE_STRING_VAR( vchiq_build_version, "unknown" );
+VC_DEBUG_DECLARE_STRING_VAR( vchiq_build_hostname, "aogp" );
+VC_DEBUG_DECLARE_STRING_VAR( vchiq_build_version, "6afa614add6784c907a1e66dcc1603ef9cf94cd9 (tainted)" );
 VC_DEBUG_DECLARE_STRING_VAR( vchiq_build_time,    __TIME__ );
 VC_DEBUG_DECLARE_STRING_VAR( vchiq_build_date,    __DATE__ );
 
